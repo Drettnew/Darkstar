@@ -16,6 +16,7 @@
 #include "TextureAsset.h"
 #include "Assets.h"
 #include "Model.h"
+#include "ObjLoader.h"
 
 //Globals
 const bool FULL_SCREEN = false;

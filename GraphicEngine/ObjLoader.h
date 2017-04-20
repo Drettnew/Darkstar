@@ -47,6 +47,61 @@ struct Material
 		map_Refl[0] = 0;
 	}
 
-	bool LoadMtlLib(LPCTSTR fileName, std::vector<Material*>& materials);
-	bool LoadObj(LPCTSTR filename);
+
 };
+
+struct ObjMesh
+{
+	struct Face
+	{
+		int firstVertex;
+		int firstTexCoord;
+		int firstNormal;
+		int numVertices;
+	};
+
+	struct Group
+	{
+		unsigned int firstFace;
+		unsigned int numFaces;
+		char name[MAX_PATH];
+	};
+
+	std::vector< XMFLOAT3 >		vertices;
+	std::vector< XMFLOAT3 >		normals;
+	std::vector< XMFLOAT2 >		texCoords;
+	std::vector< Face >		faces;
+
+	std::vector< int >			faceVertices;
+	std::vector< int >			faceNormals;
+	std::vector< int >			faceTexCoords;
+
+	std::vector< Group >		groups;
+	std::vector< Group >		matGroups;
+
+	std::vector< Material* > materials;
+
+	unsigned int numTriangles;
+
+	char sMtlFileName[MAX_PATH];	// .mtl file name. We store it in a char array (rather than TCHAR) because
+									// it's read from the obj file, and obj files are ascii.
+
+	void Free()
+	{
+		vertices.clear();
+		normals.clear();
+		texCoords.clear();
+		faces.clear();
+		matGroups.clear();
+		faceVertices.clear();
+		faceNormals.clear();
+		numTriangles = 0;
+		for (UINT i = 0; i<materials.size(); i++)
+			delete materials[i];
+		materials.clear();
+	}
+};
+
+bool LoadMtlLib(LPCTSTR fileName, std::vector<Material*>& materials);
+
+bool LoadObj(LPCTSTR filename, ObjMesh* pOutObjMesh);

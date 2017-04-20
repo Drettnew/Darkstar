@@ -92,6 +92,8 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 
 	//TEMP____________________
 	model.Initialize(m_Model, m_texture);
+	ObjMesh mesh;
+	LoadObj(L"../Data/Models/testing.obj", &mesh);
 
 	// Create the texture shader object.
 	m_TextureShader = new TextureShader;
