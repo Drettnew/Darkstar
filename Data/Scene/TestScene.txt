@@ -1,0 +1,5 @@
+Model Count: 1
+
+Data:
+
+../Data/Models/sphere.txt ../Data/stone01.tga 0.0 0.0 0.0
