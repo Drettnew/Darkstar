@@ -48,9 +48,6 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	//Initialize the assets object
 	m_Assets->bind(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
 
-	//Test Assets
-	m_texture = m_Assets->load<TextureAsset>("../Data/stone01.tga");
-
 	// Create the camera object.
 	m_Camera = new Camera;
 	if (!m_Camera)
@@ -71,7 +68,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	// Initialize the text object.
-	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, width, height, baseViewMatrix);
+	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, width, height, baseViewMatrix, m_Assets);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the text object.", L"Error", MB_OK);
@@ -83,7 +80,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
 	//Create and initialize the model object.
-	m_Model = m_Assets->load<ModelAsset>("../Data/Models/sphere.txt");
+	m_Model = m_Assets->load<ModelAsset>("../Data/Models/testing2.obj");
 	if (!m_Model)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
@@ -91,9 +88,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	//TEMP____________________
-	model.Initialize(m_Model, m_texture);
-	ObjMesh mesh;
-	LoadObj(L"../Data/Models/testing.obj", &mesh);
+	model.Initialize(m_Assets, "../Data/Models/2ModelTest.obj");
 
 	// Create the texture shader object.
 	m_TextureShader = new TextureShader;
@@ -424,7 +419,7 @@ bool Graphics::Render(float rotation)
 	m_Direct3D->TurnOnAlphaBlending();
 
 	//Render the text strings
-	//result = m_Text->Render(m_Direct3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	result = m_Text->Render(m_Direct3D->GetDeviceContext(), worldMatrix, orthoMatrix);
 	if (!result)
 	{
 		return false;

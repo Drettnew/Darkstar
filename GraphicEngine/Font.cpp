@@ -55,49 +55,31 @@ void Font::ReleaseFontData()
 	}
 }
 
-bool Font::LoadTexture(ID3D11Device * device, ID3D11DeviceContext * deviceContext, char * filename)
+bool Font::LoadTexture(Assets* assets, char * filename)
 {
 	bool result;
 
-	////Create the texture object
-	//m_Texture = new TextureAsset;
-	//if (!m_Texture)
-	//{
-	//	return false;
-	//}
-
-	////Initialize the texture object
-	//result = m_Texture->Initialize(device, deviceContext, filename);
-	//if (!result)
-	//{
-	//	return false;
-	//}
+	//Create the texture object
+	m_Texture = assets->load<TextureAsset>(filename);
+	if (!m_Texture)
+	{
+		return false;
+	}
 
 	return true;
-}
-
-void Font::ReleaseTexture()
-{
-	////Release the texture object
-	//if (m_Texture)
-	//{
-	//	m_Texture->Shutdown();
-	//	delete m_Texture;
-	//	m_Texture = 0;
-	//}
 }
 
 Font::Font()
 {
 	m_Font = 0;
-	//m_Texture = 0;
+	m_Texture = 0;
 }
 
 Font::~Font()
 {
 }
 
-bool Font::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, char * fontFilename, char* textureFilename)
+bool Font::Initialize(Assets* assets, char * fontFilename, char* textureFilename)
 {
 	bool result;
 
@@ -108,27 +90,24 @@ bool Font::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext
 		return false;
 	}
 
-	////Load the texture that has the font characters on it
-	//result = LoadTexture(device, deviceContext, textureFilename);
-	//if (!result)
-	//{
-	//	return false;
-	//}
+	//Load the texture that has the font characters on it
+	result = LoadTexture(assets, textureFilename);
+	if (!result)
+	{
+		return false;
+	}
 	return true;
 }
 
 void Font::Shutdown()
 {
-	//Release the font texture
-	ReleaseTexture();
-
 	//Release the font data
 	ReleaseFontData();
 }
 
 ID3D11ShaderResourceView * Font::GetTexture()
 {
-	return nullptr; // m_Texture->GetTexture();
+	return m_Texture->GetTexture();
 }
 
 void Font::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)

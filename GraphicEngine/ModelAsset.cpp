@@ -1,6 +1,55 @@
 #include "ModelAsset.h"
 
+struct ObjTriVertex
+{
+	int iPos;
+	int iNormal;
+	int iTex;
 
+	void Init() { iPos = iNormal = iTex = -1; }
+};
+
+struct ObjTriangle
+{
+	ObjTriVertex vertex[3];
+	void Init() { vertex[0].Init(); vertex[1].Init(); vertex[2].Init(); }
+};
+
+typedef std::vector<ObjTriangle> objTriangleList;
+
+void AddObjFace(objTriangleList& objTriangleList, const ObjMesh& objMesh,
+	int objFaceIndex)
+{
+	const ObjMesh::Face& objFace = objMesh.faces[objFaceIndex];
+	unsigned int triCount = objFace.numVertices - 2;
+
+	for (INT fv = 2; fv < objFace.numVertices; fv++)
+	{
+		ObjTriangle tri;
+		tri.Init();
+
+		tri.vertex[0].iPos = objMesh.faceVertices[objFace.firstVertex];
+		tri.vertex[1].iPos = objMesh.faceVertices[objFace.firstVertex + fv - 1];
+		tri.vertex[2].iPos = objMesh.faceVertices[objFace.firstVertex + fv];
+
+
+		if (!objMesh.normals.empty() && objFace.firstNormal >= 0)
+		{
+			tri.vertex[0].iNormal = objMesh.faceNormals[objFace.firstNormal];
+			tri.vertex[1].iNormal = objMesh.faceNormals[objFace.firstNormal + fv - 1];
+			tri.vertex[2].iNormal = objMesh.faceNormals[objFace.firstNormal + fv];
+		}
+
+		if (!objMesh.texCoords.empty() && objFace.firstTexCoord >= 0)
+		{
+			tri.vertex[0].iTex = objMesh.faceTexCoords[objFace.firstTexCoord];
+			tri.vertex[1].iTex = objMesh.faceTexCoords[objFace.firstTexCoord + fv - 1];
+			tri.vertex[2].iTex = objMesh.faceTexCoords[objFace.firstTexCoord + fv];
+		}
+
+		objTriangleList.push_back(tri);
+	}
+}
 
 bool ModelAsset::InitializeBuffers(ID3D11Device *device)
 {
@@ -10,6 +59,21 @@ bool ModelAsset::InitializeBuffers(ID3D11Device *device)
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT result;
 
+	objTriangleList triList;
+	triList.reserve(mesh.numTriangles);
+
+
+
+	for (int i = 0; i < mesh.faces.size(); i++)
+	{
+		AddObjFace(triList, mesh, i);
+	}
+
+	
+	triangleCount = triList.size();
+	m_vertexCount = (triangleCount * 3);
+	m_indexCount = m_vertexCount;
+
 	//Create the vertex array
 	vertices = new VertexType[m_vertexCount];
 	if (!vertices)
@@ -18,21 +82,38 @@ bool ModelAsset::InitializeBuffers(ID3D11Device *device)
 	}
 
 	//Create the index array
-	indices = new unsigned long[m_indexCount];
+	indices = new unsigned long[m_vertexCount];
 	if (!indices)
 	{
 		return false;
 	}
 
-	//Load the vertex array and index array with data
-	for (int i = 0; i < m_vertexCount; i++)
-	{
-		vertices[i].position = XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
-		vertices[i].texture = XMFLOAT2(m_model[i].tu, m_model[i].tv);
-		vertices[i].normal = XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
+	int index = 0;
 
-		indices[i] = i;
+	for (int i = 0; i < triList.size(); i++)
+	{
+		ObjTriangle& tri = triList[i];
+
+		for (int j = 0; j < 3; j++)
+		{
+			vertices[index].position = mesh.vertices[tri.vertex[j].iPos];
+			vertices[index].texture = mesh.texCoords[tri.vertex[j].iTex];
+			vertices[index].normal = mesh.normals[tri.vertex[j].iNormal];
+
+			indices[index] = index;
+			index++;
+		}
 	}
+
+	////Load the vertex array and index array with data
+	//for (int i = 0; i < (mesh.faces.size() * 3); i++)
+	//{
+	//	vertices[i].position = XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
+	//	vertices[i].texture = XMFLOAT2(m_model[i].tu, m_model[i].tv);
+	//	vertices[i].normal = XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
+
+	//	indices[i] = i;
+	//}
 	
 
 	//Set up the description of the static vertex buffer
@@ -82,6 +163,8 @@ bool ModelAsset::InitializeBuffers(ID3D11Device *device)
 	delete[] indices;
 	indices = 0;
 
+	mesh.Free();
+
 	return true;
 }
 
@@ -107,66 +190,13 @@ void ModelAsset::RenderBuffers(ID3D11DeviceContext* deviceContext)
 
 bool ModelAsset::LoadModel(const char * modelname)
 {
-	ifstream fin;
-	char input;
-
-	//Open the model file
-	fin.open(modelname);
-
-	//If it could not open the file then exit
-	if (fin.fail())
-	{
-		return false;
-	}
-
-	//Read up to the value of vertex count
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-	//Read in the vertex count
-	fin >> m_vertexCount;
-
-	//Set the number of indices to the same as the vertex count
-	m_indexCount = m_vertexCount;
-
-	//Create the model using the vertex count that was read in
-	m_model = new ModelType[m_vertexCount];
-	if (!m_model)
-	{
-		return false;
-	}
-
-	//Read up to the beginning of the data
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-	fin.get(input);
-	fin.get(input);
-
-	// Read in the vertex data.
-	for (int i = 0; i<m_vertexCount; i++)
-	{
-		fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
-		fin >> m_model[i].tu >> m_model[i].tv;
-		fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
-	}
-
-	// Close the model file.
-	fin.close();
-
-	return true;
+	return LoadObj(modelname, &mesh);
 }
 
 ModelAsset::ModelAsset()
 {
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
-	m_model = 0;
 }
 
 
@@ -209,14 +239,6 @@ void ModelAsset::unload()
 		m_vertexBuffer->Release();
 		m_vertexBuffer = 0;
 	}
-
-	//Release the model object
-
-	if (m_model)
-	{
-		delete[] m_model;
-		m_model = 0;
-	}
 }
 
 void ModelAsset::upload()
@@ -233,4 +255,9 @@ void ModelAsset::Render(ID3D11DeviceContext *deviceContext)
 int ModelAsset::GetIndexCount()
 {
 	return m_indexCount;
+}
+
+ObjMesh * ModelAsset::GetMesh()
+{
+	return &mesh;
 }

@@ -6,6 +6,7 @@ using namespace std;
 using namespace DirectX;
 
 #include "TextureAsset.h"
+#include "Assets.h"
 
 class Font
 {
@@ -23,17 +24,16 @@ private:
 	};
 
 	FontType* m_Font;
-	//TextureAsset* m_Texture;
+	TextureAsset* m_Texture;
 
 	bool LoadFontData(char* filename);
 	void ReleaseFontData();
-	bool LoadTexture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, char* filename);
-	void ReleaseTexture();
+	bool LoadTexture(Assets* assets, char * filename);
 public:
 	Font();
 	~Font();
 
-	bool Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, char * fontFilename, char* textureFilename);
+	bool Initialize(Assets* assets, char * fontFilename, char* textureFilename);
 	void Shutdown();
 
 	ID3D11ShaderResourceView* GetTexture();

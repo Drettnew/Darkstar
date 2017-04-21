@@ -1,7 +1,10 @@
 #pragma once
 #include <Windows.h>
 #include <vector>
-#include "ModelAsset.h"
+#include <d3d11.h>
+#include <DirectXMath.h>
+
+using namespace DirectX;
 
 struct Material
 {
@@ -70,7 +73,7 @@ struct ObjMesh
 	std::vector< XMFLOAT3 >		vertices;
 	std::vector< XMFLOAT3 >		normals;
 	std::vector< XMFLOAT2 >		texCoords;
-	std::vector< Face >		faces;
+	std::vector< Face >			faces;
 
 	std::vector< int >			faceVertices;
 	std::vector< int >			faceNormals;
@@ -104,4 +107,4 @@ struct ObjMesh
 
 bool LoadMtlLib(LPCTSTR fileName, std::vector<Material*>& materials);
 
-bool LoadObj(LPCTSTR filename, ObjMesh* pOutObjMesh);
+bool LoadObj(const char* filename, ObjMesh* pOutObjMesh);

@@ -13,16 +13,16 @@ Model::~Model()
 {
 }
 
-bool Model::Initialize(ModelAsset * modelAsset, TextureAsset * textureAsset)
+bool Model::Initialize(Assets* assets, const char* filepath)
 {
 	//Set model and texture asset for the model
-	m_modelAsset = modelAsset;
+	m_modelAsset = assets->load<ModelAsset>(filepath);
 	if (!m_modelAsset)
 	{
 		return false;
 	}
 
-	m_textureAsset = textureAsset;
+	m_textureAsset = assets->load<TextureAsset>("../Data/stone01.tga");
 	if (!m_textureAsset)
 	{
 		return false;

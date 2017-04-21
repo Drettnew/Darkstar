@@ -219,7 +219,7 @@ bool Text::RenderSentence(ID3D11DeviceContext * deviceContext, SentenceType * se
 		pixelColor);
 	if (!result)
 	{
-		false;
+		return false;
 	}
 
 	return true;
@@ -238,7 +238,7 @@ Text::~Text()
 {
 }
 
-bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, XMMATRIX baseViewMatrix)
+bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, XMMATRIX baseViewMatrix, Assets* assets)
 {
 	bool result;
 
@@ -257,7 +257,7 @@ bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext
 	}
 
 	// Initialize the font object.
-	result = m_Font->Initialize(device, deviceContext, "../Data/Fonts/fontdata.txt", "../Data/Fonts/font.tga");
+	result = m_Font->Initialize(assets, "../Data/Fonts/fontdata.txt", "../Data/Fonts/font.tga");
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the font object.", L"Error", MB_OK);

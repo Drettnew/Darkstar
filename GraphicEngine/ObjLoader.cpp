@@ -171,7 +171,7 @@ INT PathFromFileName(LPCTSTR sFileName)
 
 // Loads an Obj file. Returns 1 on success, 0 on failure. Returns 2 if the obj
 // file was loaded but the associated mtl file was not found.
-bool LoadObj(LPCTSTR filename, ObjMesh* pOutObjMesh)
+bool LoadObj(const char* filename, ObjMesh* pOutObjMesh)
 {
 	CHAR buffer[LINE_BUFF_SIZE];
 
@@ -179,7 +179,7 @@ bool LoadObj(LPCTSTR filename, ObjMesh* pOutObjMesh)
 
 	obj.Free();
 
-	FILE* pFile = _tfopen(filename, TEXT("r"));
+	FILE* pFile = fopen(filename, "r");
 	if (!pFile) return 0;
 
 
@@ -409,14 +409,14 @@ bool LoadObj(LPCTSTR filename, ObjMesh* pOutObjMesh)
 # endif
 	if (0 >= LoadMtlLib(sMtlFileName, obj.materials))
 	{
-		//g_Log( "Failed to load mtl file %s", sMtlFileName );
-		TCHAR libFile[MAX_PATH];
-		INT n = PathFromFileName(filename);
-		if (n < 0) return 2;
+		////g_Log( "Failed to load mtl file %s", sMtlFileName );
+		//TCHAR libFile[MAX_PATH];
+		//INT n = PathFromFileName(filename);
+		//if (n < 0) return 2;
 
-		lstrcpyn(libFile, filename, n + 1);
-		lstrcpyn(libFile + n, sMtlFileName, MAX_PATH - n);
-		if (0 >= LoadMtlLib(libFile, obj.materials))
+		//lstrcpyn(libFile, filename, n + 1);
+		//lstrcpyn(libFile + n, sMtlFileName, MAX_PATH - n);
+		//if (0 >= LoadMtlLib(libFile, obj.materials))
 			return false; // Failed to load mtl file.
 	}
 	return true; // Success

@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 
+#include "Assets.h"
 #include "ModelAsset.h"
 #include "TextureAsset.h"
 
@@ -18,7 +19,7 @@ public:
 	Model();
 	~Model();
 
-	bool Initialize(ModelAsset* modelAsset, TextureAsset* textureAsset);
+	bool Initialize(Assets* assets, const char* filepath);
 	void Shutdown();
 	void Render(ID3D11DeviceContext* deviceContext);
 
