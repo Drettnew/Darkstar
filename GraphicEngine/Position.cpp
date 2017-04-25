@@ -66,15 +66,15 @@ void Position::MoveForward(bool keydown)
 	// Update the forward speed movement based on the frame time and whether the user is holding the key down or not.
 	if (keydown)
 	{
-		m_forwardSpeed += m_frameTime * 1.0f;
-		if (m_forwardSpeed > (m_frameTime * 50.0f))
+		m_forwardSpeed += m_frameTime * 0.001f;
+		if (m_forwardSpeed > (m_frameTime * 0.005f))
 		{
-			m_forwardSpeed = m_frameTime * 50.0f;
+			m_forwardSpeed = m_frameTime * 0.005f;
 		}
 	}
 	else
 	{
-		m_forwardSpeed -= m_frameTime * 0.5f;
+		m_forwardSpeed -= m_frameTime * 0.0005f;
 
 		if (m_forwardSpeed < 0.0f)
 		{
@@ -98,16 +98,16 @@ void Position::MoveBackward(bool keydown)
 	// Update the backward speed movement based on the frame time and whether the user is holding the key down or not.
 	if (keydown)
 	{
-		m_backwardSpeed += m_frameTime * 1.0f;
+		m_backwardSpeed += m_frameTime * 0.001f;
 
-		if (m_backwardSpeed > (m_frameTime * 50.0f))
+		if (m_backwardSpeed > (m_frameTime * 0.005f))
 		{
-			m_backwardSpeed = m_frameTime * 50.0f;
+			m_backwardSpeed = m_frameTime * 0.005f;
 		}
 	}
 	else
 	{
-		m_backwardSpeed -= m_frameTime * 0.5f;
+		m_backwardSpeed -= m_frameTime * 0.0005f;
 
 		if (m_backwardSpeed < 0.0f)
 		{
@@ -129,16 +129,16 @@ void Position::MoveUpward(bool keydown)
 	// Update the upward speed movement based on the frame time and whether the user is holding the key down or not.
 	if (keydown)
 	{
-		m_upwardSpeed += m_frameTime * 1.5f;
+		m_upwardSpeed += m_frameTime * 0.01f;
 
-		if (m_upwardSpeed > (m_frameTime * 15.0f))
+		if (m_upwardSpeed > (m_frameTime * 0.15f))
 		{
-			m_upwardSpeed = m_frameTime * 15.0f;
+			m_upwardSpeed = m_frameTime * 0.15f;
 		}
 	}
 	else
 	{
-		m_upwardSpeed -= m_frameTime * 0.5f;
+		m_upwardSpeed -= m_frameTime * 0.005f;
 
 		if (m_upwardSpeed < 0.0f)
 		{
@@ -155,16 +155,16 @@ void Position::MoveDownward(bool keydown)
 	// Update the downward speed movement based on the frame time and whether the user is holding the key down or not.
 	if (keydown)
 	{
-		m_downwardSpeed += m_frameTime * 1.5f;
+		m_downwardSpeed += m_frameTime * 0.01f;
 
-		if (m_downwardSpeed > (m_frameTime * 15.0f))
+		if (m_downwardSpeed > (m_frameTime * 0.15f))
 		{
-			m_downwardSpeed = m_frameTime * 15.0f;
+			m_downwardSpeed = m_frameTime * 0.15f;
 		}
 	}
 	else
 	{
-		m_downwardSpeed -= m_frameTime * 0.5f;
+		m_downwardSpeed -= m_frameTime * 0.005f;
 
 		if (m_downwardSpeed < 0.0f)
 		{

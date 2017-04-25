@@ -4,13 +4,6 @@
 
 Camera::Camera()
 {
-	m_positionX = 0.0f;
-	m_positionY = 0.0f;
-	m_positionZ = 0.0f;
-
-	m_rotationX = 0.0f;
-	m_rotationY = 0.0f;
-	m_rotationZ = 0.0f;
 }
 
 
@@ -25,26 +18,50 @@ void Camera::SetBaseViewToCurrent()
 
 void Camera::SetPosition(float x, float y, float z)
 {
-	m_positionX = x;
-	m_positionY = y;
-	m_positionZ = z;
+	m_cameraPosition.SetPosition(x, y, z);
 }
 
 void Camera::SetRotation(float x, float y, float z)
 {
-	m_rotationX = x;
-	m_rotationY = y;
-	m_rotationZ = z;
+	m_cameraPosition.SetRotation(x, y, z);
 }
 
 XMFLOAT3 Camera::GetPosition()
 {
-	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
+	float positionX, positionY, positionZ;
+
+	//Get the position
+	m_cameraPosition.GetPosition(positionX, positionY, positionZ);
+
+	return XMFLOAT3(positionX, positionY, positionZ);
 }
 
 XMFLOAT3 Camera::GetRotation()
 {
-	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
+	float rotationX, rotationY, rotationZ;
+
+	//Get the camera rotation
+	m_cameraPosition.GetRotation(rotationX, rotationY, rotationZ);
+
+	return XMFLOAT3(rotationX, rotationY, rotationZ);
+}
+
+void Camera::HandleInputs(CameraInputType cameraInput, float dt)
+{
+	//Set the frame time used for updating the postion
+	m_cameraPosition.SetFrameTime(dt);
+
+	if (cameraInput.forward || false)
+	{
+		m_cameraPosition.MoveForward(cameraInput.forward);
+	}
+	//Update the position
+	m_cameraPosition.MoveForward(cameraInput.forward);
+	m_cameraPosition.MoveBackward(cameraInput.back);
+
+	//Update the rotation
+	m_cameraPosition.TurnLeft(cameraInput.left);
+	m_cameraPosition.TurnRight(cameraInput.right);
 }
 
 void Camera::Render()
@@ -63,9 +80,8 @@ void Camera::Render()
 	upVector = XMLoadFloat3(&up);
 
 	// Setup the position of the camera in the world.
-	position.x = m_positionX;
-	position.y = m_positionY;
-	position.z = m_positionZ;
+	m_cameraPosition.GetPosition(position.x, position.y, position.z);
+
 
 	// Load it into a XMVECTOR structure.
 	positionVector = XMLoadFloat3(&position);
@@ -78,11 +94,13 @@ void Camera::Render()
 	// Load it into a XMVECTOR structure.
 	lookAtVector = XMLoadFloat3(&lookAt);
 
+	//Get the camera rotation
+	m_cameraPosition.GetRotation(pitch, yaw, roll);
 
 	// Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
-	pitch = m_rotationX * 0.0174532925f;
-	yaw = m_rotationY * 0.0174532925f;
-	roll = m_rotationZ * 0.0174532925f;
+	pitch = pitch * 0.0174532925f;
+	yaw = yaw * 0.0174532925f;
+	roll = roll * 0.0174532925f;
 
 	//Create the rotation matrix form the yaw, pitch and roll values.
 	rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);

@@ -187,18 +187,20 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	return true;
 }
 
-bool Graphics::Frame(float rotationY, int mouseX, int mouseY, int fps, int cpu, float frameTime)
+bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float frameTime)
 {
 	bool result;
 
 	static float rotation = 0.0f;
 
+	m_Text->QueueString("wubba lubba dub dub", 20, 60, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
+
 	//Run assets reference checks
 	m_Assets->upload();
 	m_Assets->checkReferences();
 
-	//Rotate the camera 
-	m_Camera->SetRotation(0.0f, rotationY, 0.0f);
+	//Update camera input
+	m_Camera->HandleInputs(input, frameTime);
 
 	//Update the rotation variable each frame
 	rotation += ((float)XM_PI / 5000.0f) * frameTime;

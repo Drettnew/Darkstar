@@ -6,17 +6,21 @@
 #pragma comment(lib, "dxguid.lib")
 
 #include <dinput.h>
+#include "Camera.h"
 
 class Input
 {
 private:
+	const static int s_NumKeys = 256;
 
 	IDirectInput8* m_directInput;
 	IDirectInputDevice8* m_keyboard;
 	IDirectInputDevice8* m_mouse;
 
-	unsigned char m_keyboardState[256];
 	DIMOUSESTATE m_mouseState;
+
+	bool m_keys[s_NumKeys];
+	bool m_prevKeys[s_NumKeys];
 
 	int m_screenWidth, m_screenHeight;
 	int m_mouseX, m_mouseY;
@@ -33,8 +37,9 @@ public:
 	void Shutdown();
 	bool Frame();
 
-	bool IsEscapePressed();
+	Camera::CameraInputType GetCameraInputs();
+
+	bool IsKeyDown(unsigned int key);
+	bool IsKeyHit(unsigned int key);
 	void GetMouseLocation(int& mouseX, int& mouseY);
-	bool IsLeftArrowPressed();
-	bool IsRightArrowPressed();
 };

@@ -51,6 +51,6 @@ public:
 	GRAPHIC_API Graphics(const Graphics& other);
 	GRAPHIC_API ~Graphics();
 	GRAPHIC_API bool Initialize(int& width, int& height, HWND hwnd);
-	GRAPHIC_API bool Frame(float rotationY, int mouseX, int mouseY, int fps, int cpu, float frameTime);
+	GRAPHIC_API bool Frame(Camera::CameraInputType input, int fps, int cpu, float frameTime);
 	GRAPHIC_API void Shutdown();
 };

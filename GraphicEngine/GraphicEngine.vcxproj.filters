@@ -93,6 +93,9 @@
     <ClInclude Include="ObjLoader.h">
       <Filter>Importer\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Position.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics.cpp">
@@ -151,6 +154,9 @@
     </ClCompile>
     <ClCompile Include="ObjLoader.cpp">
       <Filter>Importer\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Position.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

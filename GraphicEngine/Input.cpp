@@ -5,7 +5,7 @@ bool Input::ReadKeyboard()
 	HRESULT result;
 
 	//Read the keyboard device
-	result = m_keyboard->GetDeviceState(sizeof(m_keyboardState), (LPVOID)&m_keyboardState);
+	result = m_keyboard->GetDeviceState(sizeof(m_keys), (LPVOID)&m_keys);
 	if (FAILED(result))
 	{
 		// If the keyboard lost focus or was not acquired then try to get control back.
@@ -62,6 +62,7 @@ Input::Input() {
 	m_directInput = 0;
 	m_keyboard = 0;
 	m_mouse = 0;
+	memset(m_keys, 0, sizeof(bool) * s_NumKeys);
 }
 Input::Input(const Input & other)
 {
@@ -177,6 +178,8 @@ void Input::Shutdown()
 
 bool Input::Frame()
 {
+	memcpy(m_prevKeys, m_keys, sizeof(bool) * s_NumKeys);
+
 	bool result;
 
 	// Read the current state of the keyboard.
@@ -199,39 +202,34 @@ bool Input::Frame()
 	return true;
 }
 
-bool Input::IsEscapePressed()
+Camera::CameraInputType Input::GetCameraInputs()
 {
-	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
-	if (m_keyboardState[DIK_ESCAPE] & 0x80)
-	{
-		return true;
-	}
+	Camera::CameraInputType output;
 
-	return false;
+	output.back = IsKeyDown(DIK_DOWNARROW);
+	output.forward = IsKeyDown(DIK_UPARROW);
+	output.left = IsKeyDown(DIK_LEFTARROW);
+	output.right = IsKeyDown(DIK_RIGHTARROW);
+
+	output.mouseX = m_mouseX;
+	output.mouseY = m_mouseY;
+
+	return output;
 }
+
+bool Input::IsKeyDown(unsigned int key)
+{
+	return m_keys[key];
+}
+
+bool Input::IsKeyHit(unsigned int key)
+{
+	return m_keys[key] && !m_prevKeys[key];
+}
+
 
 void Input::GetMouseLocation(int & mouseX, int & mouseY)
 {
 	mouseX = m_mouseX;
 	mouseY = m_mouseY;
-}
-
-bool Input::IsLeftArrowPressed()
-{
-	if (m_keyboardState[DIK_LEFTARROW] & 0x80)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-bool Input::IsRightArrowPressed()
-{
-	if (m_keyboardState[DIK_RIGHTARROW] & 0x80)
-	{
-		return true;
-	}
-
-	return false;
 }

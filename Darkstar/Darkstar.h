@@ -7,7 +7,6 @@
 #include "FpsCounter.h"
 #include "CpuCounter.h"
 #include "Timer.h"
-#include "Position.h"
 
 class Darkstar
 {
@@ -22,7 +21,6 @@ private:
 	FpsCounter* m_Fps;
 	CpuCounter* m_Cpu;
 	Timer* m_Timer;
-	Position* m_Position;
 
 	bool Frame();
 	void InitializeWindows(int& screenWidth, int& screenHeight);

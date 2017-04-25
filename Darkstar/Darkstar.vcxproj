@@ -150,7 +150,6 @@
     <ClCompile Include="CpuCounter.cpp" />
     <ClCompile Include="Darkstar.cpp" />
     <ClCompile Include="FpsCounter.cpp" />
-    <ClCompile Include="Position.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
@@ -164,7 +163,6 @@
     <ClInclude Include="CpuCounter.h" />
     <ClInclude Include="Darkstar.h" />
     <ClInclude Include="FpsCounter.h" />
-    <ClInclude Include="Position.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Timer.h" />
   </ItemGroup>

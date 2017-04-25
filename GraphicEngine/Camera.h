@@ -1,14 +1,28 @@
 #pragma once
+#include "Position.h"
 #include <DirectXMath.h>
 using namespace DirectX;
 
 class Camera
 {
+public:
+	struct CameraInputType
+	{
+		bool forward, back, left, right;
+		int mouseX, mouseY;
+
+		CameraInputType()
+		{
+			forward = back = left = right = false;
+			mouseX = mouseY = -1;
+		}
+	};
+
 private:
-	float m_positionX, m_positionY, m_positionZ;
-	float m_rotationX, m_rotationY, m_rotationZ;
 	XMMATRIX m_viewMatrix;
 	XMMATRIX m_baseViewMatrix;
+
+	Position m_cameraPosition;
 
 public:
 	Camera();
@@ -22,6 +36,8 @@ public:
 
 	XMFLOAT3 GetPosition();
 	XMFLOAT3 GetRotation();
+
+	void HandleInputs(CameraInputType cameraInput, float dt);
 
 	void Render();
 	void GetViewMatrix(XMMATRIX& viewMatrix);

@@ -19,26 +19,8 @@ bool Darkstar::Frame()
 		return false;
 	}
 
-	//Set the grame time for calculating the update position
-	m_Position->SetFrameTime(m_Timer->GetTime());
-
-	// Check if the left or right arrow key has been pressed, if so rotate the camera accordingly.
-	keyDown = m_Input->IsLeftArrowPressed();
-	m_Position->TurnLeft(keyDown);
-
-	keyDown = m_Input->IsRightArrowPressed();
-	m_Position->TurnRight(keyDown);
-
-	float tempX, tempZ;
-
-	//Get current view point rotation
-	m_Position->GetRotation(tempX, rotationY, tempZ);
-
-	// Get the location of the mouse from the input object,
-	m_Input->GetMouseLocation(mouseX, mouseY);
-
 	//Do the frame processing for the graphics object.
-	result = m_Graphics->Frame(rotationY, mouseX, mouseY, m_Fps->GetFps(), m_Cpu->GetCpuPercentage(), m_Timer->GetTime());
+	result = m_Graphics->Frame(m_Input->GetCameraInputs(), m_Fps->GetFps(), m_Cpu->GetCpuPercentage(), m_Timer->GetTime());
 	if (!result)
 	{
 		return false;
@@ -155,7 +137,6 @@ Darkstar::Darkstar()
 	m_Fps = 0;
 	m_Cpu = 0;
 	m_Timer = 0;
-	m_Position = 0;
 }
 
 Darkstar::Darkstar(const Darkstar& other)
@@ -202,7 +183,7 @@ void Darkstar::Run()
 		}
 
 		//Check if the user pressed escape and want to quit
-		if (m_Input->IsEscapePressed() == true)
+		if (m_Input->IsKeyHit(DIK_ESCAPE) == true)
 		{
 			done = true;
 		}
@@ -211,12 +192,6 @@ void Darkstar::Run()
 
 void Darkstar::Shutdown()
 {
-	// Release the position object.
-	if (m_Position)
-	{
-		delete m_Position;
-		m_Position = 0;
-	}
 
 	// Release the timer object.
 	if (m_Timer)
@@ -317,13 +292,6 @@ bool Darkstar::Initialize()
 	// Create the timer object.
 	m_Timer = new Timer;
 	if (!m_Timer)
-	{
-		return false;
-	}
-
-	// Create the position object.
-	m_Position = new Position;
-	if (!m_Position)
 	{
 		return false;
 	}
