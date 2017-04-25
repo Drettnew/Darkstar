@@ -18,16 +18,19 @@ private:
 		XMFLOAT2 texture;
 	};
 
+	const static int maxSentences = 10;
+	const static int maxLength = 32;
+
 	Font* m_Font;
 	FontShader* m_FontShader;
 	int m_screenWidth, m_screenHeight;
 	XMMATRIX m_baseViewMatrix;
 
-	SentenceType* m_sentence1;
-	SentenceType* m_sentence2;
+	SentenceType* m_sentencesList[maxSentences];
+	bool m_sentencesUsed[maxSentences];
 
-	bool InitializeSentence(SentenceType** sentence, int maxLength, ID3D11Device* device);
-	bool UpdateSentence(SentenceType* sentence, char* text, int positionX, int positionY, float red, float green, float blue,
+	bool InitializeSentence(SentenceType** sentence, ID3D11Device* device);
+	bool UpdateSentence(SentenceType* sentence, const char* text, int positionX, int positionY, float red, float green, float blue,
 		ID3D11DeviceContext* deviceContext);
 	void ReleaseSentence(SentenceType** sentence);
 	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence, XMMATRIX worldMatrix,
@@ -36,9 +39,11 @@ public:
 	Text();
 	~Text();
 
-	bool Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, XMMATRIX baseViewMatrix, Assets* assets);
+	bool Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, Assets* assets);
 	void Shutdown();
 	bool Render(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX orthoMatrix);
+
+	bool QueueString(std::string text, float x, float y, float red, float green, float blue, ID3D11DeviceContext* deviceContext);
+
 	bool SetFps(int, ID3D11DeviceContext* deviceContext);
-	bool SetCpu(int, ID3D11DeviceContext* deviceContext);
 };

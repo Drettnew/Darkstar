@@ -23,7 +23,6 @@ Graphics::~Graphics() {
 bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 {
 	bool result;
-	XMMATRIX baseViewMatrix;
 	
 	//Create the Direct3D object
 	m_Direct3D = new D3D;
@@ -58,7 +57,6 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	//Init a base view matrix with the camera for 2d user interface rendering
 	m_Camera->SetPosition(0.0f, 0.0f, -1.0f);
 	m_Camera->Render();
-	m_Camera->GetViewMatrix(baseViewMatrix);
 
 	// Create the text object.
 	m_Text = new Text;
@@ -68,7 +66,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	// Initialize the text object.
-	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, width, height, baseViewMatrix, m_Assets);
+	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, width, height, m_Assets);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the text object.", L"Error", MB_OK);
@@ -219,7 +217,7 @@ bool Graphics::Frame(float rotationY, int mouseX, int mouseY, int fps, int cpu, 
 	}
 
 	// Set the cpu usage.
-	result = m_Text->SetCpu(cpu, m_Direct3D->GetDeviceContext());
+	result = m_Text->QueueString("Cpu: " + std::to_string(cpu) + "%", 20, 40, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
 	if (!result)
 	{
 		return false;
@@ -368,7 +366,7 @@ bool Graphics::Render(float rotation)
 		renderModel = m_Frustum->CheckSphere(positionX, positionY, positionZ, radius);
 
 		//If it can be seen then render it if not skip this model and check the next sphere
-		if (renderModel)
+		if (true)
 		{
 			m_Direct3D->GetWorldMatrix(worldMatrix);
 

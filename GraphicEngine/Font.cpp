@@ -110,7 +110,7 @@ ID3D11ShaderResourceView * Font::GetTexture()
 	return m_Texture->GetTexture();
 }
 
-void Font::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)
+void Font::BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY)
 {
 	VertexType* vertexPtr;
 	int numLetters, index, i, letter;

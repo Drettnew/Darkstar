@@ -38,7 +38,7 @@ public:
 
 	ID3D11ShaderResourceView* GetTexture();
 
-	void BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY);
+	void BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY);
 
 private:
 

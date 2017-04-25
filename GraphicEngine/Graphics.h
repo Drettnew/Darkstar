@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "Util.h"
 #include "D3D.h"
 #include "Camera.h"

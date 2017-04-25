@@ -1,6 +1,6 @@
 #include "Text.h"
 
-bool Text::InitializeSentence(SentenceType ** sentence, int maxLength, ID3D11Device * device)
+bool Text::InitializeSentence(SentenceType ** sentence, ID3D11Device * device)
 {
 	VertexType* vertices;
 	unsigned long* indices;
@@ -104,7 +104,7 @@ bool Text::InitializeSentence(SentenceType ** sentence, int maxLength, ID3D11Dev
 	return true;
 }
 
-bool Text::UpdateSentence(SentenceType * sentence, char * text, int positionX, int positionY, float red, float green, float blue, ID3D11DeviceContext * deviceContext)
+bool Text::UpdateSentence(SentenceType * sentence, const char * text, int positionX, int positionY, float red, float green, float blue, ID3D11DeviceContext * deviceContext)
 {
 	int numLetters;
 	VertexType* vertices;
@@ -229,16 +229,13 @@ Text::Text()
 {
 	m_Font = 0;
 	m_FontShader = 0;
-
-	m_sentence1 = 0;
-	m_sentence2 = 0;
 }
 
 Text::~Text()
 {
 }
 
-bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, XMMATRIX baseViewMatrix, Assets* assets)
+bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, Assets* assets)
 {
 	bool result;
 
@@ -247,7 +244,11 @@ bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext
 	m_screenHeight = screenHeight;
 
 	//Store the base view matrix;
-	m_baseViewMatrix = baseViewMatrix;
+	XMFLOAT3 basePosition(0.0f, 0.0f, -5.0f);
+	XMFLOAT3 baseLookAt(0.0f, 0.0f, 1.0f);
+	XMFLOAT3 baseUp(0.0f, 1.0f, 0.0f);
+
+	m_baseViewMatrix = XMMatrixLookAtLH(XMLoadFloat3(&basePosition), XMLoadFloat3(&baseLookAt), XMLoadFloat3(&baseUp));
 
 	//Create the font object
 	m_Font = new Font;
@@ -279,32 +280,16 @@ bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext
 		return false;
 	}
 
-	// Initialize the first sentence.
-	result = InitializeSentence(&m_sentence1, 16, device);
-	if (!result)
+	for (int i = 0; i < maxSentences; i++)
 	{
-		return false;
-	}
+		// Initialize the first sentence.
+		result = InitializeSentence(&m_sentencesList[i], device);
+		if (!result)
+		{
+			return false;
+		}
 
-	// Now update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence1, "Hello", 100, 100, 1.0f, 1.0f, 1.0f, deviceContext);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Initialize the first sentence.
-	result = InitializeSentence(&m_sentence2, 16, device);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Now update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence2, "Goodbye", 100, 200, 1.0f, 1.0f, 0.0f, deviceContext);
-	if (!result)
-	{
-		return false;
+		m_sentencesUsed[i] = false;
 	}
 
 	return true;
@@ -312,11 +297,12 @@ bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext
 
 void Text::Shutdown()
 {
-	// Release the first sentence.
-	ReleaseSentence(&m_sentence1);
-
-	// Release the second sentence.
-	ReleaseSentence(&m_sentence2);
+	for (int i = 0; i < maxSentences; i++)
+	{
+		// Initialize the first sentence.
+		ReleaseSentence(&m_sentencesList[i]);
+		delete m_sentencesList[i];
+	}
 
 	// Release the font shader object.
 	if (m_FontShader)
@@ -339,22 +325,42 @@ bool Text::Render(ID3D11DeviceContext * deviceContext, XMMATRIX worldMatrix, XMM
 {
 	bool result;
 
-
-	// Draw the first sentence.
-	result = RenderSentence(deviceContext, m_sentence1, worldMatrix, orthoMatrix);
-	if (!result)
+	for (int i = 0; i < maxSentences; i++)
 	{
-		return false;
-	}
+		if (m_sentencesUsed[i])
+		{
+			result = RenderSentence(deviceContext, m_sentencesList[i], worldMatrix, orthoMatrix);
+			if (!result)
+			{
+				return false;
+			}
 
-	// Draw the second sentence.
-	result = RenderSentence(deviceContext, m_sentence2, worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		return false;
+			m_sentencesUsed[i] = false;
+		}
 	}
 
 	return true;
+}
+
+bool Text::QueueString(std::string text, float x, float y, float red, float green, float blue, ID3D11DeviceContext * deviceContext)
+{
+	bool result;
+	for (int i = 0; i < maxSentences; i++)
+	{
+		if (!m_sentencesUsed[i])
+		{
+			result = UpdateSentence(m_sentencesList[i], text.c_str(), x, y, red, green, blue, deviceContext);
+			if (!result)
+			{
+				return false;
+			}
+
+			m_sentencesUsed[i] = true;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool Text::SetFps(int fps, ID3D11DeviceContext * deviceContext)
@@ -403,32 +409,7 @@ bool Text::SetFps(int fps, ID3D11DeviceContext * deviceContext)
 	}
 
 	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence1, fpsString, 20, 20, red, green, blue, deviceContext);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool Text::SetCpu(int cpu, ID3D11DeviceContext * deviceContext)
-{
-	char tempString[16];
-	char cpuString[16];
-	bool result;
-
-
-	// Convert the cpu integer to string format.
-	_itoa_s(cpu, tempString, 10);
-
-	// Setup the cpu string.
-	strcpy_s(cpuString, "Cpu: ");
-	strcat_s(cpuString, tempString);
-	strcat_s(cpuString, "%");
-
-	// Update the sentence vertex buffer with the new string information.
-	result = UpdateSentence(m_sentence2, cpuString, 20, 40, 0.0f, 1.0f, 0.0f, deviceContext);
+	result = QueueString(fpsString, 20, 20, red, green, blue, deviceContext);
 	if (!result)
 	{
 		return false;
