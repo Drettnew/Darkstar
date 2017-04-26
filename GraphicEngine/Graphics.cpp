@@ -3,14 +3,11 @@
 Graphics::Graphics() {
 	m_Direct3D = 0;
 	m_Camera = 0;
-	m_Model = 0;
-	m_ColorShader = 0;
-	m_TextureShader = 0;
 	m_LightShader = 0;
-	m_Light = 0;
-	m_Bitmap = 0;
 	m_Text = 0;
-
+	m_Frustum = 0;
+	m_ModelList = 0;
+	m_Assets = 0;
 	m_Renderer = 0;
 }
 Graphics::Graphics(const Graphics & other)
@@ -77,31 +74,25 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	// Set the initial position of the camera.
 	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
-	//Create and initialize the model object.
-	m_Model = m_Assets->load<ModelAsset>("../Data/Models/testing2.obj");
-	if (!m_Model)
-	{
-		MessageBox(hwnd, L"Could not initialize the model object.", L"Error", MB_OK);
-		return false;
-	}
-
 	//TEMP____________________
-	model.Initialize(m_Assets, "../Data/Models/2ModelTest.obj");
+	model.Initialize(m_Assets, "../Data/Models/floor.obj");
 
-	// Create the texture shader object.
-	m_TextureShader = new TextureShader;
-	if (!m_TextureShader)
-	{
-		return false;
-	}
+	modelList.Random(m_Assets, 5, "../Data/Models/sphere.obj", 10, 10, false);
 
-	// Initialize the texture shader object.
-	result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the texture shader object.", L"Error", MB_OK);
-		return false;
-	}
+	//// Create the texture shader object.
+	//m_TextureShader = new TextureShader;
+	//if (!m_TextureShader)
+	//{
+	//	return false;
+	//}
+
+	//// Initialize the texture shader object.
+	//result = m_TextureShader->Initialize(m_Direct3D->GetDevice(), hwnd);
+	//if (!result)
+	//{
+	//	MessageBox(hwnd, L"Could not initialize the texture shader object.", L"Error", MB_OK);
+	//	return false;
+	//}
 
 	// Create the light shader object.
 	m_LightShader = new LightShader;
@@ -118,71 +109,71 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 		return false;
 	}
 
-	//Create the bitmap object
-	m_Bitmap = new Bitmap;
-	if (!m_Bitmap)
-	{
-		return false;
-	}
+	////Create the bitmap object
+	//m_Bitmap = new Bitmap;
+	//if (!m_Bitmap)
+	//{
+	//	return false;
+	//}
 
-	//Initialize the bitmap object
-	result = m_Bitmap->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), width, height, "../Data/stone01.tga", 100, 100);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize th bitmap boject", L"Error", MB_OK);
-		return false;
-	}
+	////Initialize the bitmap object
+	//result = m_Bitmap->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), width, height, "../Data/stone01.tga", 100, 100);
+	//if (!result)
+	//{
+	//	MessageBox(hwnd, L"Could not initialize th bitmap boject", L"Error", MB_OK);
+	//	return false;
+	//}
 
-	//Create the light Object
-	m_Light = new Light;
-	if (!m_Light)
-	{
-		return false;
-	}
+	////Create the light Object
+	//m_Light = new Light;
+	//if (!m_Light)
+	//{
+	//	return false;
+	//}
 
-	//Initialize the light object
-	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f);
-	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
-	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetSpecularPower(32.0f);
+	////Initialize the light object
+	//m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f);
+	//m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	//m_Light->SetDirection(1.0f, 0.0f, 1.0f);
+	//m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
+	//m_Light->SetSpecularPower(32.0f);
 
-	//Create the model list object
-	m_ModelList = new ModelList;
-	if (!m_ModelList)
-	{
-		return false;
-	}
+	////Create the model list object
+	//m_ModelList = new ModelList;
+	//if (!m_ModelList)
+	//{
+	//	return false;
+	//}
 
-	//Initialize th model list object
-	result = m_ModelList->Initialize(1);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the model list object.", L"Error", MB_OK);
-		return false;
-	}
+	////Initialize th model list object
+	//result = m_ModelList->Initialize(1);
+	//if (!result)
+	//{
+	//	MessageBox(hwnd, L"Could not initialize the model list object.", L"Error", MB_OK);
+	//	return false;
+	//}
 
-	//Create the frustum object
-	m_Frustum = new Frustum;
-	if (!m_Frustum)
-	{
-		return false;
-	}
+	////Create the frustum object
+	//m_Frustum = new Frustum;
+	//if (!m_Frustum)
+	//{
+	//	return false;
+	//}
 
-	//Create the renderer object
-	m_Renderer = new ForwardRenderer;
-	if (!m_Renderer)
-	{
-		return false;
-	}
+	////Create the renderer object
+	//m_Renderer = new ForwardRenderer;
+	//if (!m_Renderer)
+	//{
+	//	return false;
+	//}
 
-	//Initialize the renderer object
-	result = m_Renderer->Initialize(m_Direct3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
-		return false;
-	}
+	////Initialize the renderer object
+	//result = m_Renderer->Initialize(m_Direct3D->GetDevice(), hwnd);
+	//if (!result)
+	//{
+	//	MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
+	//	return false;
+	//}
 
 	return true;
 }
@@ -203,13 +194,13 @@ bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float fram
 	m_Camera->HandleInputs(input, frameTime);
 
 	//Update the rotation variable each frame
-	rotation += ((float)XM_PI / 5000.0f) * frameTime;
-	if (rotation > 360.0f)
-	{
-		rotation -= 360.0f;
-	}
+	//rotation += ((float)XM_PI / 5000.0f) * frameTime;
+	//if (rotation > 360.0f)
+	//{
+	//	rotation -= 360.0f;
+	//}
 
-	model.SetRotation(0.0f, rotation, 0.0f);
+	//model.SetRotation(0.0f, 0.0f, 0.0f);
 
 	// Set the frames per second.
 	result = m_Text->SetFps(fps, m_Direct3D->GetDeviceContext());
@@ -220,11 +211,6 @@ bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float fram
 
 	// Set the cpu usage.
 	result = m_Text->QueueString("Cpu: " + std::to_string(cpu) + "%", 20, 40, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
-	if (!result)
-	{
-		return false;
-	}
-
 	if (!result)
 	{
 		return false;
@@ -241,6 +227,12 @@ bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float fram
 
 void Graphics::Shutdown()
 {
+	if (m_Assets)
+	{
+		delete m_Assets;
+		m_Assets = 0;
+	}
+
 	//Release the text object
 	if (m_Text)
 	{
@@ -249,35 +241,12 @@ void Graphics::Shutdown()
 		m_Text = 0;
 	}
 
-	//Release the bitmap object
-	if (m_Bitmap)
-	{
-		m_Bitmap->Shutdown();
-		delete m_Bitmap;
-		m_Bitmap = 0;
-	}
-
-	// Release the light object.
-	if (m_Light)
-	{
-		delete m_Light;
-		m_Light = 0;
-	}
-
 	// Release the light shader object.
 	if (m_LightShader)
 	{
 		m_LightShader->Shutdown();
 		delete m_LightShader;
 		m_LightShader = 0;
-	}
-
-	// Release the color shader object.
-	if (m_TextureShader)
-	{
-		m_TextureShader->Shutdown();
-		delete m_TextureShader;
-		m_TextureShader = 0;
 	}
 
 	// Release the camera object.
@@ -318,21 +287,17 @@ void Graphics::Shutdown()
 	}
 
 
-	if (m_Assets)
-	{
-		delete m_Assets;
-		m_Assets = 0;
-	}
+
 }
 
 bool Graphics::Render(float rotation)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix;
-	XMFLOAT4 color;
+	//XMFLOAT4 color;
 	bool result = true;
-	bool renderModel;
-	int modelCount, renderCount, index;
-	float positionX, positionY, positionZ, radius;
+	//bool renderModel;
+	//int modelCount, renderCount, index;
+	//float positionX, positionY, positionZ, radius;
 
 	// Clear the buffers to begin the scene.
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
@@ -346,54 +311,69 @@ bool Graphics::Render(float rotation)
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
-	//Contstruct the frustum
-	m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix);
+	////Contstruct the frustum
+	//m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix);
 
-	//Get the number of models thar will be rendered
-	modelCount = m_ModelList->GetModelCount();
+	////Get the number of models thar will be rendered
+	//modelCount = m_ModelList->GetModelCount();
 
-	//Initialize the count of models that have been rendered
-	renderCount = 0;
+	////Initialize the count of models that have been rendered
+	//renderCount = 0;
 
-	//Go through all the models and render them only if they can be seen by the camera view
-	for (index = 0; index < modelCount; index++)
-	{
-		//Get the postion and color of the spehere model at this index
-		m_ModelList->GetData(index, positionX, positionY, positionZ, color);
+	////Go through all the models and render them only if they can be seen by the camera view
+	//for (index = 0; index < modelCount; index++)
+	//{
+	//	//Get the postion and color of the spehere model at this index
+	//	m_ModelList->GetData(index, positionX, positionY, positionZ, color);
 
-		//Set the radius of the sphere to 1.0;
-		radius = 1.0f;
+	//	//Set the radius of the sphere to 1.0;
+	//	radius = 1.0f;
 
-		//Check if the sphere model is in the view frustum
-		renderModel = m_Frustum->CheckSphere(positionX, positionY, positionZ, radius);
+	//	//Check if the sphere model is in the view frustum
+	//	renderModel = m_Frustum->CheckSphere(positionX, positionY, positionZ, radius);
 
-		//If it can be seen then render it if not skip this model and check the next sphere
-		if (true)
-		{
-			m_Direct3D->GetWorldMatrix(worldMatrix);
+	//	//If it can be seen then render it if not skip this model and check the next sphere
+	//	if (true)
+	//	{
+	//		m_Direct3D->GetWorldMatrix(worldMatrix);
 
-			//Rotate the world matrix by the rotation value so that the tiangle will spin
-			worldMatrix = worldMatrix * XMMatrixRotationY(rotation);
+	//		//Rotate the world matrix by the rotation value so that the tiangle will spin
+	//		worldMatrix = worldMatrix * XMMatrixRotationY(rotation);
 
-			//Move the model to the location it should be rendered at
-			worldMatrix = worldMatrix * XMMatrixTranslation(positionX, positionY, positionZ);
+	//		//Move the model to the location it should be rendered at
+	//		worldMatrix = worldMatrix * XMMatrixTranslation(positionX, positionY, positionZ);
 
 			//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
 			model.Render(m_Direct3D->GetDeviceContext());
 
 			//Render the model using the light shader
 			result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), model.GetIndexCount(), model.GetWorldMatrix(), viewMatrix, projectionMatrix,
-				model.GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
-				m_Camera->GetPosition(), m_Light->GetSpecularColor(), m_Light->GetSpecularPower());
+				model.GetTexture(),
+				m_Camera->GetPosition());
 			if (!result)
 			{
 				return false;
 			}
 
-			//Since this model was rendered increment the count
-			renderCount++;
-		}
-	}
+	//		//Since this model was rendered increment the count
+	//		renderCount++;
+	//	}
+	//}
+
+			for (int i = 0; i < modelList.GetModelCount(); i++)
+			{
+				//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
+				modelList.GetModel(i)->Render(m_Direct3D->GetDeviceContext());
+
+				//Render the model using the light shader
+				result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), modelList.GetModel(i)->GetIndexCount(), modelList.GetModel(i)->GetWorldMatrix(), viewMatrix, projectionMatrix,
+					modelList.GetModel(i)->GetTexture(),
+					m_Camera->GetPosition());
+				if (!result)
+				{
+					return false;
+				}
+			}
 
 	//Turn of the Z buffer to begin all 2D rendering
 	m_Direct3D->TurnZBufferOff();
@@ -405,7 +385,7 @@ bool Graphics::Render(float rotation)
 		return false;
 	}
 
-	//Get a new world matrix
+	////Get a new world matrix
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 
 	//Render the bitmap with the texture shader

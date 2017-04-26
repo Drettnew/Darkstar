@@ -2,70 +2,74 @@
 
 ModelList::ModelList()
 {
-	m_ModelInfoList = 0;
 }
 
 ModelList::~ModelList()
 {
+	m_modelList.clear();
 }
 
 bool ModelList::Initialize(int numModels)
 {
-	float red, green, blue;
-
-	//Store number of models
-	m_modelCount = numModels;
-
-	//Create a list array of the model information
-	m_ModelInfoList = new ModelInfoType[m_modelCount];
-	if (!m_ModelInfoList)
-	{
-		return false;
-	}
-
-	//Seed the random generator with the current time
-	srand((unsigned int)time(NULL));
-
-	//Go through all the models and randomly generate model color and posiiton
-	for (int i = 0; i < m_modelCount; i++)
-	{
-		//Renderate a random colorfo the model
-		red = (float)rand() / RAND_MAX;
-		green = (float)rand() / RAND_MAX;
-		blue = (float)rand() / RAND_MAX;
-
-		m_ModelInfoList[i].color = XMFLOAT4(red, green, blue, 1.0f);
-
-		// Generate a random position in front of the viewer for the mode.
-		m_ModelInfoList[i].positionX = (((float)rand() - (float)rand()) / RAND_MAX) * 10.0f;
-		m_ModelInfoList[i].positionY = (((float)rand() - (float)rand()) / RAND_MAX) * 10.0f;
-		m_ModelInfoList[i].positionZ = ((((float)rand() - (float)rand()) / RAND_MAX) * 10.0f) + 5.0f;
-	}
-
 	return true;
 }
 
 void ModelList::Shutdown()
 {
-	// Release the model information list.
-	if (m_ModelInfoList)
+}
+
+bool ModelList::Random(Assets* assets, int numModels, const char* filepath, int rangeX, int rangeZ, bool uniform)
+{
+	//Seed the random generator with the current time
+	srand((unsigned int)time(NULL));
+
+	for (int i = 0; i < numModels; i++)
 	{
-		delete[] m_ModelInfoList;
-		m_ModelInfoList = 0;
+		Model model;
+
+		model.Initialize(assets, filepath);
+		m_modelList.push_back(model);
+
+		float x = (-rangeX) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (rangeX + rangeX)));
+
+		float z = (-rangeZ) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (rangeZ + rangeZ)));
+
+		m_modelList[i].SetPosition(x, 1, z);
 	}
 
+	return true;
+}
+
+bool ModelList::AddModel(std::string filepath, Assets* assets)
+{
+	Model model;
+	bool result = false;
+
+	result = model.Initialize(assets, filepath.c_str());
+
+	m_modelList.push_back(model);
+
+	return result;
+}
+
+bool ModelList::RemoveModel(int index)
+{
+	m_modelList.erase(m_modelList.begin() + index);
+
+	return true;
 }
 
 int ModelList::GetModelCount()
 {
-	return m_modelCount;
+	return m_modelList.size();
 }
 
-void ModelList::GetData(int index, float &positionX, float &positionY, float &positionZ, XMFLOAT4 &color)
+Model * ModelList::GetModel(int index)
 {
-	positionX = m_ModelInfoList[index].positionX;
-	positionY = m_ModelInfoList[index].positionY;
-	positionZ = m_ModelInfoList[index].positionZ;
+	return &m_modelList.at(index);
+}
 
-	color = m_ModelInfoList[index].color;
+std::vector<Model> ModelList::GetModelList()
+{
+	return m_modelList;
 }

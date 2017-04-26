@@ -3,6 +3,9 @@
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
 #include <fstream>
+#include <time.h>
+#include <stdlib.h>
+
 using namespace DirectX;
 using namespace std;
 
@@ -22,13 +25,60 @@ private:
 		float padding;
 	};
 
+	enum class LightType : uint32_t
+	{
+		Point = 0,
+		Spot = 1,
+		Directional = 2
+	};
+
+	struct Light
+	{
+		XMFLOAT4 m_PositionWS;
+		//--------------------------------------------------------------( 16 bytes )
+		XMFLOAT4 m_DirectionWS;
+		//--------------------------------------------------------------( 16 bytes )
+
+		XMFLOAT4 m_PositionVS;
+		//--------------------------------------------------------------( 16 bytes )
+		XMFLOAT4 m_DirectionVS;
+		//--------------------------------------------------------------( 16 bytes )
+
+		XMFLOAT4 m_Color;
+		//--------------------------------------------------------------( 16 bytes )
+
+		float m_SpotlightAngle;
+
+		float m_Range;
+
+		float m_Intensity;
+
+		uint32_t m_Enabled;
+		//--------------------------------------------------------------( 16 bytes )
+
+		LightType m_Type;
+
+		XMFLOAT3 m_Padding;
+		//--------------------------------------------------------------( 16 bytes )
+		//--------------------------------------------------------------( 16 * 7 = 112 bytes )
+
+		Light::Light()
+			: m_PositionWS(0, 0, 0, 1)
+			, m_DirectionWS(0, 0, -1, 0)
+			, m_PositionVS(0, 0, 0, 1)
+			, m_DirectionVS(0, 0, 1, 0)
+			, m_Color(1, 1, 1, 1)
+			, m_SpotlightAngle(45.0f)
+			, m_Range(100.0f)
+			, m_Intensity(1.0f)
+			, m_Enabled(true)
+			, m_Type(LightType::Point)
+		{}
+	};
+
 	struct LightBufferType
 	{
-		XMFLOAT4 ambioentColor;
-		XMFLOAT4 diffuseColor;
-		XMFLOAT3 lightDirection;
-		float specularPower;
-		XMFLOAT4 specularColor;
+		Light light[1];
 	};
 
 	ID3D11VertexShader* m_vertexShader;
@@ -44,8 +94,7 @@ private:
 	void OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename);
 
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 lightDirection, XMFLOAT4 diffuseColor,
-		XMFLOAT4 ambientColors, XMFLOAT3 cameraPosition, XMFLOAT4 specularColor, float specularPower);
+		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 public:
 	LightShader();
@@ -55,6 +104,5 @@ public:
 	bool Initialize(ID3D11Device* device, HWND hwnd);
 	void Shutdown();
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 lightDirection, XMFLOAT4 diffuseColor, 
-		XMFLOAT4 ambientColors, XMFLOAT3 cameraPosition, XMFLOAT4 specularColor, float specularPower);
+		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition);
 };

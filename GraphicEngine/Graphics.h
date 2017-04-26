@@ -30,20 +30,15 @@ class Graphics
 private:
 	D3D* m_Direct3D;
 	Camera* m_Camera;
-	ModelAsset* m_Model;
-	ColorShader* m_ColorShader;
-	TextureShader* m_TextureShader;
 	LightShader* m_LightShader;
-	Light* m_Light;
-	Bitmap* m_Bitmap;
 	Text* m_Text;
 	ModelList* m_ModelList;
 	Frustum* m_Frustum;
-	TextureAsset* m_texture;
 
 	ForwardRenderer* m_Renderer;
 	Assets* m_Assets;
 	Model model;
+	ModelList modelList;
 
 	bool Render(float rotation);
 public:

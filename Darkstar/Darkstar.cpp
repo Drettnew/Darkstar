@@ -145,6 +145,7 @@ Darkstar::Darkstar(const Darkstar& other)
 
 Darkstar::~Darkstar()
 {
+	OutputDebugString(L"Dude---------------------------------------------------\n");
 }
 
 void Darkstar::Run()
