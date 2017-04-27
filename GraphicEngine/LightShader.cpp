@@ -268,7 +268,7 @@ void LightShader::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd,
 }
 
 bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-										XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture,  XMFLOAT3 cameraPosition)
+										XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture,  XMFLOAT3 cameraPosition, LightList* lightList)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -289,31 +289,26 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 
 	//viewMatrix = XMMatrixTranspose(viewMatrix);
 
-	//Seed the random generator with the current time
-	srand((unsigned int)time(NULL));
+	std::vector<Light> lights = lightList->GetLightList();
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < lights.size(); i++)
 	{
-		float red = (float)rand() / RAND_MAX;
-		float green = (float)rand() / RAND_MAX;
-		float blue = (float)rand() / RAND_MAX;
-
-		float dirX = -1 + ((float)rand() / (RAND_MAX / 2));
-		float dirZ = -1 + ((float)rand() / (RAND_MAX / 2));
+		Light light = lights[i];
 
 		//Copy the lighting variables into the constant buffer
-		dataPtr2->light[0].m_Color = XMFLOAT4(red, green, blue, 1.0f);
-		dataPtr2->light[0].m_DirectionWS = XMFLOAT4(dirX, -1, dirZ, 1.0f);
-		XMStoreFloat4(&dataPtr2->light[0].m_DirectionVS, XMVector4Transform(XMLoadFloat4(&dataPtr2->light[0].m_DirectionWS), viewMatrix));
+		dataPtr2->light[i].m_Color = light.m_Color;
 
-		dataPtr2->light[0].m_PositionWS = XMFLOAT4(-0.0f, 8.0f, -0.0f, 0.0f);
-		XMStoreFloat4(&dataPtr2->light[0].m_PositionVS, XMVector4Transform(XMLoadFloat4(&dataPtr2->light[0].m_PositionWS), viewMatrix));
+		dataPtr2->light[i].m_DirectionVS = light.m_DirectionVS;
+		dataPtr2->light[i].m_DirectionWS = light.m_DirectionWS;
 
-		dataPtr2->light[0].m_Range = 10.0f;
-		dataPtr2->light[0].m_Intensity = 10.0f;
-		dataPtr2->light[0].m_Enabled = 1;
-		dataPtr2->light[0].m_SpotlightAngle = 45.0f;
-		dataPtr2->light[0].m_Type = LightType::Spot;
+		dataPtr2->light[i].m_PositionVS = light.m_PositionVS;
+		dataPtr2->light[i].m_PositionWS = light.m_PositionWS;
+
+		dataPtr2->light[i].m_Range = light.m_Range;
+		dataPtr2->light[i].m_Intensity = light.m_Intensity;
+		dataPtr2->light[i].m_Enabled = light.m_Enabled;
+		dataPtr2->light[i].m_SpotlightAngle = light.m_SpotlightAngle;
+		dataPtr2->light[i].m_Type = light.m_Type;
 	}
 
 	//Unlock the constant buffer
@@ -438,13 +433,13 @@ void LightShader::Shutdown()
 }
 
 bool LightShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition)
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition, LightList* lightList)
 {
 	bool result;
 
 	//Set the shader parameters that it will use for rendering.
 	result = SetShaderParameters(deviceContext,	indexCount, worldMatrix, viewMatrix, projectionMatrix, texture, 
-									cameraPosition);
+									cameraPosition, lightList);
 	if (!result)
 	{
 		return false;

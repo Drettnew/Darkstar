@@ -77,7 +77,7 @@ SamplerState SampleType;
 cbuffer LightBuffer
 {
     //Temp
-    Light light[1];
+    Light light[4];
 };  //-------------------------- ( 112 * 1 = 112 bytes )
 
 struct LightingResult
@@ -181,44 +181,47 @@ float4 LightPixelShader(PixelInputType input) : SV_Target
     float4 specular;
 
     float3 positionVS = mul(input.positionVS, (float3x3) input.mat);
-    float3 lightPositionVS = mul(light[0].PositionWS.xyz, (float3x3) input.mat);
     float3 normalVS = normalize(mul(input.normal, (float3x3) input.mat));
     float3 viewDirVS = normalize(mul(input.viewDirection, (float3x3) input.mat));
 
-    float3 DirectionVS = mul(light[0].DirectionWS.xyz, (float3x3) input.mat);
-
-    lightDir = lightPositionVS - positionVS;
+    
 
     //Sample the pixel color from the texture using the sampler at this texture coordinate location
     textureColor = shaderTexture.Sample(SampleType, input.tex);
 
     LightingResult totalResult = (LightingResult) 0;
 
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 4; i++)
     {
+        
+        float3 lightPositionVS = mul(light[i].PositionWS.xyz, (float3x3) input.mat);
+        float3 DirectionVS = mul(light[i].DirectionWS.xyz, (float3x3) input.mat);
+
+        lightDir = lightPositionVS - positionVS;
+
         LightingResult result = (LightingResult) 0;
 
-        if (!light[0].Enabled)
+        if (!light[i].Enabled)
             continue;
 
-        if (light[0].Type != DIRECTIONAL_LIGHT && length(lightDir) > light[0].Range)
+        if (light[i].Type != DIRECTIONAL_LIGHT && length(lightDir) > light[i].Range)
             continue;
 
-        switch (light[0].Type)
+        switch (light[i].Type)
         {
                 case POINT_LIGHT:
                 {
-                    result = DoPointLight(light[0], viewDirVS, lightDir, normalVS);
+                    result = DoPointLight(light[i], viewDirVS, lightDir, normalVS);
                 }
                 break;
                 case SPOT_LIGHT:
                 {
-                    result = DoSpotLight(light[0], viewDirVS, lightDir, normalVS, DirectionVS);
+                    result = DoSpotLight(light[i], viewDirVS, lightDir, normalVS, DirectionVS);
                 }
                 break;
                 case DIRECTIONAL_LIGHT:
                 {
-                    result = DoDirectionalLight(light[0], viewDirVS, lightDir, normalVS, DirectionVS);
+                    result = DoDirectionalLight(light[i], viewDirVS, lightDir, normalVS, DirectionVS);
                 }
                 break;
         }

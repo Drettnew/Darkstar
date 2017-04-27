@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "Assets.h"
 
-	class TextureAsset : public Asset
+	class TextureAsset //: public Asset
 	{
 	private:
 		struct TargaHeader
@@ -17,11 +17,16 @@
 		};
 	public:
 		GRAPHIC_API TextureAsset();
-		GRAPHIC_API virtual ~TextureAsset();
+		//GRAPHIC_API virtual ~TextureAsset();
 
-		GRAPHIC_API bool load(std::string path, Assets* assets) override;
-		GRAPHIC_API void unload() override;
-		GRAPHIC_API void upload() override;
+		~TextureAsset();
+
+		bool Load(std::string path, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		void Shutdown();
+
+		//GRAPHIC_API bool load(std::string path, Assets* assets) override;
+		//GRAPHIC_API void unload() override;
+		//GRAPHIC_API void upload() override;
 
 		GRAPHIC_API ID3D11ShaderResourceView* GetTexture();
 	private:

@@ -7,7 +7,7 @@ Graphics::Graphics() {
 	m_Text = 0;
 	m_Frustum = 0;
 	m_ModelList = 0;
-	m_Assets = 0;
+	//m_Assets = 0;
 	m_Renderer = 0;
 }
 Graphics::Graphics(const Graphics & other)
@@ -35,14 +35,14 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	//Create the Assets object
-	m_Assets = new Assets;
-	if (!m_Assets)
-	{
-		return false;
-	}
+	//m_Assets = new Assets;
+	//if (!m_Assets)
+	//{
+	//	return false;
+	//}
 
 	//Initialize the assets object
-	m_Assets->bind(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
+	//m_Assets->bind(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext());
 
 	// Create the camera object.
 	m_Camera = new Camera;
@@ -63,7 +63,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	// Initialize the text object.
-	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, width, height, m_Assets);
+	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, width, height);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the text object.", L"Error", MB_OK);
@@ -74,10 +74,14 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	// Set the initial position of the camera.
 	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
-	//TEMP____________________
-	model.Initialize(m_Assets, "../Data/Models/floor.obj");
+	m_model = new Model();
 
-	modelList.Random(m_Assets, 5, "../Data/Models/sphere.obj", 10, 10, false);
+	//TEMP____________________
+	m_model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), "../Data/Models/floor.obj");
+
+	m_lightList.Random(10, 10, 4);
+
+	//modelList.Random(m_Assets, 5, "../Data/Models/sphere.obj", 10, 10, false);
 
 	//// Create the texture shader object.
 	//m_TextureShader = new TextureShader;
@@ -160,20 +164,20 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	//	return false;
 	//}
 
-	////Create the renderer object
-	//m_Renderer = new ForwardRenderer;
-	//if (!m_Renderer)
-	//{
-	//	return false;
-	//}
+	//Create the renderer object
+	m_Renderer = new ForwardPlusGPU;
+	if (!m_Renderer)
+	{
+		return false;
+	}
 
-	////Initialize the renderer object
-	//result = m_Renderer->Initialize(m_Direct3D->GetDevice(), hwnd);
-	//if (!result)
-	//{
-	//	MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
-	//	return false;
-	//}
+	//Initialize the renderer object
+	result = m_Renderer->Initialize(m_Direct3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
+		return false;
+	}
 
 	return true;
 }
@@ -187,8 +191,8 @@ bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float fram
 	m_Text->QueueString("wubba lubba dub dub", 20, 60, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
 
 	//Run assets reference checks
-	m_Assets->upload();
-	m_Assets->checkReferences();
+	//m_Assets->upload();
+	//m_Assets->checkReferences();
 
 	//Update camera input
 	m_Camera->HandleInputs(input, frameTime);
@@ -222,16 +226,16 @@ bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float fram
 	{
 		return false;
 	}
-	m_Assets->checkHotload(frameTime);
+	//m_Assets->checkHotload(frameTime);
 }
 
 void Graphics::Shutdown()
 {
-	if (m_Assets)
+	/*if (m_Assets)
 	{
 		delete m_Assets;
 		m_Assets = 0;
-	}
+	}*/
 
 	//Release the text object
 	if (m_Text)
@@ -286,7 +290,14 @@ void Graphics::Shutdown()
 		m_Renderer = 0;
 	}
 
+	if (m_model)
+	{
+		m_model->Shutdown();
+		delete m_model;
+		m_model = 0;
+	}
 
+	
 
 }
 
@@ -344,12 +355,12 @@ bool Graphics::Render(float rotation)
 	//		worldMatrix = worldMatrix * XMMatrixTranslation(positionX, positionY, positionZ);
 
 			//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
-			model.Render(m_Direct3D->GetDeviceContext());
+			m_model->Render(m_Direct3D->GetDeviceContext());
 
 			//Render the model using the light shader
-			result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), model.GetIndexCount(), model.GetWorldMatrix(), viewMatrix, projectionMatrix,
-				model.GetTexture(),
-				m_Camera->GetPosition());
+			result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_model->GetIndexCount(), m_model->GetWorldMatrix(), viewMatrix, projectionMatrix,
+				m_model->GetTexture(),
+				m_Camera->GetPosition(), &m_lightList);
 			if (!result)
 			{
 				return false;
@@ -360,20 +371,20 @@ bool Graphics::Render(float rotation)
 	//	}
 	//}
 
-			for (int i = 0; i < modelList.GetModelCount(); i++)
-			{
-				//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
-				modelList.GetModel(i)->Render(m_Direct3D->GetDeviceContext());
+			//for (int i = 0; i < modelList.GetModelCount(); i++)
+			//{
+			//	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
+			//	modelList.GetModel(i)->Render(m_Direct3D->GetDeviceContext());
 
-				//Render the model using the light shader
-				result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), modelList.GetModel(i)->GetIndexCount(), modelList.GetModel(i)->GetWorldMatrix(), viewMatrix, projectionMatrix,
-					modelList.GetModel(i)->GetTexture(),
-					m_Camera->GetPosition());
-				if (!result)
-				{
-					return false;
-				}
-			}
+			//	//Render the model using the light shader
+			//	result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), modelList.GetModel(i)->GetIndexCount(), modelList.GetModel(i)->GetWorldMatrix(), viewMatrix, projectionMatrix,
+			//		modelList.GetModel(i)->GetTexture(),
+			//		m_Camera->GetPosition());
+			//	if (!result)
+			//	{
+			//		return false;
+			//	}
+			//}
 
 	//Turn of the Z buffer to begin all 2D rendering
 	m_Direct3D->TurnZBufferOff();

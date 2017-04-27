@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 using namespace std;
-class ModelAsset : public Asset
+class ModelAsset //: public Asset
 {
 private:
 	struct meshObjects
@@ -39,11 +39,16 @@ private:
 	bool LoadModel(const char* modelname);
 public:
 	ModelAsset();
-	virtual ~ModelAsset();
+	//virtual ~ModelAsset();
+	~ModelAsset();
 
-	GRAPHIC_API bool load(std::string path, Assets* assets) override;
-	GRAPHIC_API void unload() override;
-	GRAPHIC_API void upload() override;
+	//GRAPHIC_API bool load(std::string path, Assets* assets) override;
+	//GRAPHIC_API void unload() override;
+	//GRAPHIC_API void upload() override;
+
+	GRAPHIC_API bool LoadModel(std::string path, ID3D11Device* device);
+
+	GRAPHIC_API bool Shutdown();
 
 	GRAPHIC_API void Render(ID3D11DeviceContext* deviceContext);
 

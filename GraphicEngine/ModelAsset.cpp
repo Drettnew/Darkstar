@@ -204,7 +204,49 @@ ModelAsset::~ModelAsset()
 {
 }
 
-bool ModelAsset::load(std::string path, Assets * assets)
+//bool ModelAsset::load(std::string path, Assets * assets)
+//{
+//	bool result;
+//
+//	//Initialize the model data
+//	result = LoadModel(path.c_str());
+//	if (!result)
+//	{
+//		return false;
+//	}
+//
+//	//Initialize the vertex and index buffers
+//	result = InitializeBuffers(assets->GetDevice());
+//	if (!result)
+//	{
+//		return false;
+//	}
+//
+//	return true;
+//}
+//
+//void ModelAsset::unload()
+//{
+//	//Release the index buffer
+//	if (m_indexBuffer)
+//	{
+//		m_indexBuffer->Release();
+//		m_indexBuffer = 0;
+//	}
+//	//Release the vertex buffer
+//	if (m_vertexBuffer)
+//	{
+//		m_vertexBuffer->Release();
+//		m_vertexBuffer = 0;
+//	}
+//}
+//
+//void ModelAsset::upload()
+//{
+//	
+//}
+
+bool ModelAsset::LoadModel(std::string path, ID3D11Device* device)
 {
 	bool result;
 
@@ -216,7 +258,7 @@ bool ModelAsset::load(std::string path, Assets * assets)
 	}
 
 	//Initialize the vertex and index buffers
-	result = InitializeBuffers(assets->GetDevice());
+	result = InitializeBuffers(device);
 	if (!result)
 	{
 		return false;
@@ -225,25 +267,9 @@ bool ModelAsset::load(std::string path, Assets * assets)
 	return true;
 }
 
-void ModelAsset::unload()
+bool ModelAsset::Shutdown()
 {
-	//Release the index buffer
-	if (m_indexBuffer)
-	{
-		m_indexBuffer->Release();
-		m_indexBuffer = 0;
-	}
-	//Release the vertex buffer
-	if (m_vertexBuffer)
-	{
-		m_vertexBuffer->Release();
-		m_vertexBuffer = 0;
-	}
-}
-
-void ModelAsset::upload()
-{
-	
+	return false;
 }
 
 void ModelAsset::Render(ID3D11DeviceContext *deviceContext)

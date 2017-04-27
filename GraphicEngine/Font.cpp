@@ -55,16 +55,18 @@ void Font::ReleaseFontData()
 	}
 }
 
-bool Font::LoadTexture(Assets* assets, char * filename)
+bool Font::LoadTexture(char * filename, ID3D11Device * device, ID3D11DeviceContext * deviceContext)
 {
 	bool result;
 
 	//Create the texture object
-	m_Texture = assets->load<TextureAsset>(filename);
+	m_Texture = new TextureAsset();
 	if (!m_Texture)
 	{
 		return false;
 	}
+
+	m_Texture->Load(filename, device, deviceContext);
 
 	return true;
 }
@@ -77,9 +79,10 @@ Font::Font()
 
 Font::~Font()
 {
+
 }
 
-bool Font::Initialize(Assets* assets, char * fontFilename, char* textureFilename)
+bool Font::Initialize(char * fontFilename, char* textureFilename, ID3D11Device * device, ID3D11DeviceContext * deviceContext)
 {
 	bool result;
 
@@ -91,7 +94,7 @@ bool Font::Initialize(Assets* assets, char * fontFilename, char* textureFilename
 	}
 
 	//Load the texture that has the font characters on it
-	result = LoadTexture(assets, textureFilename);
+	result = LoadTexture(textureFilename, device, deviceContext);
 	if (!result)
 	{
 		return false;
@@ -103,6 +106,13 @@ void Font::Shutdown()
 {
 	//Release the font data
 	ReleaseFontData();
+
+	if (m_Texture)
+	{
+		m_Texture->Shutdown();
+		delete m_Texture;
+		m_Texture = 0;
+	}
 }
 
 ID3D11ShaderResourceView * Font::GetTexture()

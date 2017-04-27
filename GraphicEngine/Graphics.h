@@ -18,6 +18,7 @@
 #include "Assets.h"
 #include "Model.h"
 #include "ObjLoader.h"
+#include "ForwardPlusGPURenderer.h"
 
 //Globals
 const bool FULL_SCREEN = false;
@@ -35,10 +36,12 @@ private:
 	ModelList* m_ModelList;
 	Frustum* m_Frustum;
 
-	ForwardRenderer* m_Renderer;
-	Assets* m_Assets;
-	Model model;
+	ForwardPlusGPU* m_Renderer;
+	//Assets* m_Assets;
+	Model* m_model;
 	ModelList modelList;
+
+	LightList m_lightList;
 
 	bool Render(float rotation);
 public:

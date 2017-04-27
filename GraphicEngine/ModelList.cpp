@@ -27,7 +27,7 @@ bool ModelList::Random(Assets* assets, int numModels, const char* filepath, int 
 	{
 		Model model;
 
-		model.Initialize(assets, filepath);
+		//model.Initialize(assets, filepath);
 		m_modelList.push_back(model);
 
 		float x = (-rangeX) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (rangeX + rangeX)));
@@ -45,7 +45,7 @@ bool ModelList::AddModel(std::string filepath, Assets* assets)
 	Model model;
 	bool result = false;
 
-	result = model.Initialize(assets, filepath.c_str());
+	//result = model.Initialize(assets, filepath.c_str());
 
 	m_modelList.push_back(model);
 

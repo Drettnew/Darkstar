@@ -1,63 +1,67 @@
 #include "Light.h"
 
-Light::Light()
+LightList::LightList()
 {
 }
 
-Light::Light(const Light &)
+LightList::LightList(const LightList &)
 {
 }
 
-Light::~Light()
+LightList::~LightList()
 {
 }
 
-void Light::SetAmbientColor(float red, float green, float blue, float alpha)
+void LightList::AddLight(Light light)
 {
-	m_ambientColor = XMFLOAT4(red, green, blue, alpha);
+	m_lightList.push_back(light);
 }
 
-void Light::SetDiffuseColor(float red, float green, float blue, float alpha)
+std::vector<Light> LightList::GetLightList()
 {
-	m_diffuseColor = XMFLOAT4(red, green, blue, alpha);
+	return m_lightList;
 }
 
-void Light::SetDirection(float x, float y, float z)
+void LightList::Random(float maxX, float maxY, int numLights)
 {
-	m_direction = XMFLOAT3(x, y, z);
-}
+	m_lightList.reserve(numLights);
 
-void Light::SetSpecularColor(float red, float green, float blue, float alpha)
-{
-	m_specularColor = XMFLOAT4(red, green, blue, alpha);
-}
+	//Seed the random generator with the current time
+	srand((unsigned int)time(NULL));
 
-void Light::SetSpecularPower(float power)
-{
-	m_specularPower = power;
-}
+	for (int i = 0; i < numLights; i++)
+	{
+		float red = (float)rand() / RAND_MAX;
+		float green = (float)rand() / RAND_MAX;
+		float blue = (float)rand() / RAND_MAX;
 
-XMFLOAT4 Light::GetAmbientColor()
-{
-	return m_ambientColor;
-}
+		float dirX = -1 + ((float)rand() / (RAND_MAX / 2.0f));
+		float dirZ = -1 + ((float)rand() / (RAND_MAX / 2.0f));
 
-XMFLOAT4 Light::GetDiffuseColor()
-{
-	return m_diffuseColor;
-}
+		float x = (-maxX) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (maxX + maxX)));
 
-XMFLOAT3 Light::GetDirection()
-{
-	return m_direction;
-}
+		float z = (-maxY) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (maxY + maxY)));
 
-XMFLOAT4 Light::GetSpecularColor()
-{
-	return m_specularColor;
-}
+		float range = ((float)rand() / (RAND_MAX / 10.0f));
 
-float Light::GetSpecularPower()
-{
-	return m_specularPower;
+		float intensity = 2 + ((float)rand() / (RAND_MAX / 5.0f));
+
+		LightType type = (LightType)(rand() % 2);
+
+		Light light;
+
+		//Copy the lighting variables into the constant buffer
+		light.m_Color = XMFLOAT4(red, green, blue, 1.0f);
+		light.m_DirectionWS = XMFLOAT4(dirX, -1, dirZ, 1.0f);
+
+		light.m_PositionWS = XMFLOAT4(x, 5.0f, z, 1.0f);
+
+		light.m_Range = range;
+		light.m_Intensity = intensity;
+		light.m_Enabled = 1;
+		light.m_SpotlightAngle = 45.0f;
+		light.m_Type = type;
+
+		m_lightList.push_back(light);
+	}
 }

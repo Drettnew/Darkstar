@@ -13,26 +13,43 @@ Model::~Model()
 {
 }
 
-bool Model::Initialize(Assets* assets, const char* filepath)
+bool Model::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* filepath)
 {
 	//Set model and texture asset for the model
-	m_modelAsset = assets->load<ModelAsset>(filepath);
+	m_modelAsset = new ModelAsset();// = assets->load<ModelAsset>(filepath);
 	if (!m_modelAsset)
 	{
 		return false;
 	}
 
-	m_textureAsset = assets->load<TextureAsset>("../Data/stone01.tga");
+	m_modelAsset->LoadModel(std::string(filepath), device);
+
+	m_textureAsset = new TextureAsset();//assets->load<TextureAsset>("../Data/stone01.tga");
 	if (!m_textureAsset)
 	{
 		return false;
 	}
+
+	m_textureAsset->Load("../Data/stone01.tga", device, deviceContext);
 
 	return true;
 }
 
 void Model::Shutdown()
 {
+	if (m_modelAsset)
+	{
+		m_modelAsset->Shutdown();
+		delete m_modelAsset;
+		m_modelAsset = 0;
+	}
+
+	if (m_textureAsset)
+	{
+		m_textureAsset->Shutdown();
+		delete m_textureAsset;
+		m_textureAsset = 0;
+	}
 }
 
 void Model::Render(ID3D11DeviceContext * deviceContext)

@@ -28,12 +28,12 @@ private:
 
 	bool LoadFontData(char* filename);
 	void ReleaseFontData();
-	bool LoadTexture(Assets* assets, char * filename);
+	bool LoadTexture(char * filename, ID3D11Device * device, ID3D11DeviceContext * deviceContext);
 public:
 	Font();
 	~Font();
 
-	bool Initialize(Assets* assets, char * fontFilename, char* textureFilename);
+	bool Initialize(char * fontFilename, char* textureFilename, ID3D11Device * device, ID3D11DeviceContext * deviceContext);
 	void Shutdown();
 
 	ID3D11ShaderResourceView* GetTexture();

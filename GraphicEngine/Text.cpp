@@ -235,7 +235,7 @@ Text::~Text()
 {
 }
 
-bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight, Assets* assets)
+bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, HWND hwnd, int screenWidth, int screenHeight)
 {
 	bool result;
 
@@ -258,7 +258,7 @@ bool Text::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext
 	}
 
 	// Initialize the font object.
-	result = m_Font->Initialize(assets, "../Data/Fonts/fontdata.txt", "../Data/Fonts/font.tga");
+	result = m_Font->Initialize("../Data/Fonts/fontdata.txt", "../Data/Fonts/font.tga", device, deviceContext);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the font object.", L"Error", MB_OK);

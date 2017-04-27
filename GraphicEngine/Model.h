@@ -19,7 +19,7 @@ public:
 	Model();
 	~Model();
 
-	bool Initialize(Assets* assets, const char* filepath);
+	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* filepath);
 	void Shutdown();
 	void Render(ID3D11DeviceContext* deviceContext);
 
