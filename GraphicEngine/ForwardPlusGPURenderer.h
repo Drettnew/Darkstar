@@ -6,6 +6,7 @@
 #include "LightShader.h"
 #include "Light.h"
 #include "Model.h"
+#include "DepthPass.h"
 
 class ForwardPlusGPU
 {
@@ -13,7 +14,7 @@ public:
 	ForwardPlusGPU();
 	~ForwardPlusGPU();
 
-	bool Initialize(ID3D11Device* device, HWND hwnd);
+	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd);
 	void Shutdown();
 
 	bool Render(D3D* directX, Camera* camera, Model* model);
@@ -21,4 +22,6 @@ public:
 private:
 	LightList m_lightList;
 	LightShader* m_Shader;
+
+	DepthPass* m_depthPrePass;
 };

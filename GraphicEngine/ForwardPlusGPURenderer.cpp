@@ -3,13 +3,14 @@
 ForwardPlusGPU::ForwardPlusGPU()
 {
 	m_Shader = 0;
+	m_depthPrePass = 0;
 }
 
 ForwardPlusGPU::~ForwardPlusGPU()
 {
 }
 
-bool ForwardPlusGPU::Initialize(ID3D11Device * device, HWND hwnd)
+bool ForwardPlusGPU::Initialize(ID3D11Device * device, ID3D11DeviceContext* deviceContext, HWND hwnd)
 {
 	bool result;
 
@@ -20,12 +21,24 @@ bool ForwardPlusGPU::Initialize(ID3D11Device * device, HWND hwnd)
 		return false;
 	}
 
-
 	// Initialize the texture shader object.
 	result = m_Shader->Initialize(device, hwnd);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the light shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_depthPrePass = new DepthPass;
+	if (!m_depthPrePass)
+	{
+		return false;
+	}
+
+	result = m_depthPrePass->Initialize(device, deviceContext, hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the depth pre-pass object.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -43,6 +56,13 @@ void ForwardPlusGPU::Shutdown()
 		delete m_Shader;
 		m_Shader = 0;
 	}
+
+	if (m_depthPrePass)
+	{
+		m_depthPrePass->Shutdown();
+		delete m_depthPrePass;
+		m_depthPrePass = 0;
+	}
 }
 
 bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
@@ -55,6 +75,10 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 
 	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
 	model->Render(directX->GetDeviceContext());
+
+	m_depthPrePass->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix);
+
+	directX->Reset();
 
 	//Render the model using the light shader
 	result = m_Shader->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix,

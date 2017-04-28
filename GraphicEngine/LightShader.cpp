@@ -129,11 +129,11 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	//result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
-	//if (FAILED(result))
-	//{
-	//	return false;
-	//}
+	result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
+	if (FAILED(result))
+	{
+		return false;
+	}
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;

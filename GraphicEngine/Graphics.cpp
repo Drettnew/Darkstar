@@ -172,7 +172,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	//Initialize the renderer object
-	result = m_Renderer->Initialize(m_Direct3D->GetDevice(), hwnd);
+	result = m_Renderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
@@ -322,6 +322,8 @@ bool Graphics::Render(float rotation)
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
+	m_Renderer->Render(m_Direct3D, m_Camera, m_model);
+
 	////Contstruct the frustum
 	//m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix);
 
@@ -355,16 +357,16 @@ bool Graphics::Render(float rotation)
 	//		worldMatrix = worldMatrix * XMMatrixTranslation(positionX, positionY, positionZ);
 
 			//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
-			m_model->Render(m_Direct3D->GetDeviceContext());
+			//m_model->Render(m_Direct3D->GetDeviceContext());
 
-			//Render the model using the light shader
-			result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_model->GetIndexCount(), m_model->GetWorldMatrix(), viewMatrix, projectionMatrix,
-				m_model->GetTexture(),
-				m_Camera->GetPosition(), &m_lightList);
-			if (!result)
-			{
-				return false;
-			}
+			////Render the model using the light shader
+			//result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_model->GetIndexCount(), m_model->GetWorldMatrix(), viewMatrix, projectionMatrix,
+			//	m_model->GetTexture(),
+			//	m_Camera->GetPosition(), &m_lightList);
+			//if (!result)
+			//{
+			//	return false;
+			//}
 
 	//		//Since this model was rendered increment the count
 	//		renderCount++;

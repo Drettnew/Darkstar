@@ -42,7 +42,6 @@ bool D3D::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, b
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
-	D3D11_VIEWPORT viewport;
 	float fieldOfView, screenAspect;
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	D3D11_BLEND_DESC blendStateDescription;
@@ -547,6 +546,25 @@ void D3D::GetVideoCardInfo(char *cardName, int &memory)
 {
 	strcpy_s(cardName, 128, m_videoCardDescription);
 	memory = m_videoCardMemory;
+}
+
+void D3D::SetViewport()
+{
+	// Create the viewport.
+	m_deviceContext->RSSetViewports(1, &viewport);
+}
+
+void D3D::SetRenderTarget()
+{
+	// Bind the render target view and depth stencil buffer to the output render pipeline.
+	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+}
+
+void D3D::Reset()
+{
+	SetViewport();
+	SetRenderTarget();
+	TurnZBufferOn();
 }
 
 void D3D::TurnZBufferOn()
