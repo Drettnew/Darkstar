@@ -267,9 +267,20 @@ bool ModelAsset::LoadModel(std::string path, ID3D11Device* device)
 	return true;
 }
 
-bool ModelAsset::Shutdown()
+void ModelAsset::Shutdown()
 {
-	return false;
+		//Release the index buffer
+		if (m_indexBuffer)
+		{
+			m_indexBuffer->Release();
+			m_indexBuffer = 0;
+		}
+		//Release the vertex buffer
+		if (m_vertexBuffer)
+		{
+			m_vertexBuffer->Release();
+			m_vertexBuffer = 0;
+		}
 }
 
 void ModelAsset::Render(ID3D11DeviceContext *deviceContext)

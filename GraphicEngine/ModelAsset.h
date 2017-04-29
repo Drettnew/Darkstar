@@ -48,7 +48,7 @@ public:
 
 	GRAPHIC_API bool LoadModel(std::string path, ID3D11Device* device);
 
-	GRAPHIC_API bool Shutdown();
+	GRAPHIC_API void Shutdown();
 
 	GRAPHIC_API void Render(ID3D11DeviceContext* deviceContext);
 
