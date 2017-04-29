@@ -4,6 +4,7 @@
 #include <d3dcompiler.h>
 #include <fstream>
 #include "Light.h"
+#include "StructureBuffer.h"
 
 using namespace DirectX;
 using namespace std;
@@ -28,6 +29,8 @@ private:
 	{
 		Light light[4];
 	};
+
+	StructuredBuffer m_structuredBuffer;
 
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;

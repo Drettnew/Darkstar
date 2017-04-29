@@ -170,6 +170,8 @@ LightingResult DoDirectionalLight(Light light, float3 viewDir, float3 position, 
     return result;
 }
 
+StructuredBuffer<Light> LightBuffer : register(t1);
+
 //Pixel Shader
 float4 LightPixelShader(PixelInputType input) : SV_Target
 {
@@ -191,37 +193,37 @@ float4 LightPixelShader(PixelInputType input) : SV_Target
 
     LightingResult totalResult = (LightingResult) 0;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         
-        float3 lightPositionVS = mul(light[i].PositionWS.xyz, (float3x3) input.mat);
-        float3 DirectionVS = mul(light[i].DirectionWS.xyz, (float3x3) input.mat);
+        float3 lightPositionVS = mul(LightBuffer[i].PositionWS.xyz, (float3x3) input.mat);
+        float3 DirectionVS = mul(LightBuffer[i].DirectionWS.xyz, (float3x3) input.mat);
 
         lightDir = lightPositionVS - positionVS;
 
         LightingResult result = (LightingResult) 0;
 
-        if (!light[i].Enabled)
+        if (!LightBuffer[i].Enabled)
             continue;
 
-        if (light[i].Type != DIRECTIONAL_LIGHT && length(lightDir) > light[i].Range)
+        if (LightBuffer[i].Type != DIRECTIONAL_LIGHT && length(lightDir) > LightBuffer[i].Range)
             continue;
 
-        switch (light[i].Type)
+        switch (LightBuffer[i].Type)
         {
                 case POINT_LIGHT:
                 {
-                    result = DoPointLight(light[i], viewDirVS, lightDir, normalVS);
+                    result = DoPointLight(LightBuffer[i], viewDirVS, lightDir, normalVS);
                 }
                 break;
                 case SPOT_LIGHT:
                 {
-                    result = DoSpotLight(light[i], viewDirVS, lightDir, normalVS, DirectionVS);
+                    result = DoSpotLight(LightBuffer[i], viewDirVS, lightDir, normalVS, DirectionVS);
                 }
                 break;
                 case DIRECTIONAL_LIGHT:
                 {
-                    result = DoDirectionalLight(light[i], viewDirVS, lightDir, normalVS, DirectionVS);
+                    result = DoDirectionalLight(LightBuffer[i], viewDirVS, lightDir, normalVS, DirectionVS);
                 }
                 break;
         }

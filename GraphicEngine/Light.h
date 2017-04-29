@@ -49,7 +49,7 @@ struct Light
 		, m_DirectionVS(0, 0, 1, 0)
 		, m_Color(1, 1, 1, 1)
 		, m_SpotlightAngle(45.0f)
-		, m_Range(100.0f)
+		, m_Range(20.0f)
 		, m_Intensity(1.0f)
 		, m_Enabled(true)
 		, m_Type(LightType::Point)

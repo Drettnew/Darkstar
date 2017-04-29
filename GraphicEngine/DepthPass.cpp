@@ -269,21 +269,18 @@ void DepthPass::ShutdownShader()
 	if (m_layout)
 	{
 		m_layout->Release();
-		delete m_layout;
 		m_layout = 0;
 	}
 
 	if (m_matrixBuffer)
 	{
 		m_matrixBuffer->Release();
-		delete m_matrixBuffer;
 		m_matrixBuffer = 0;
 	}
 
 	if (m_vertexShader)
 	{
 		m_vertexShader->Release();
-		delete m_vertexShader;
 		m_vertexShader = 0;
 	}
 }
@@ -326,21 +323,18 @@ void DepthPass::ShutdownDepthStencilView()
 	if (m_depthStencilView)
 	{
 		m_depthStencilView->Release();
-		delete m_depthStencilView;
 		m_depthStencilView = 0;
 	}
 
 	if (m_depthTexture)
 	{
 		m_depthTexture->Release();
-		delete m_depthTexture;
 		m_depthTexture = 0;
 	}
 
 	if (m_resourceView)
 	{
 		m_resourceView->Release();
-		delete m_resourceView;
 		m_resourceView = 0;
 	}
 }

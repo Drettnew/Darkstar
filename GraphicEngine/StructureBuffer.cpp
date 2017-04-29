@@ -62,21 +62,18 @@ void StructuredBuffer::Shutdown()
 	if (m_buffer)
 	{
 		m_buffer->Release();
-		delete m_buffer;
 		m_buffer = 0;
 	}
 
 	if (m_resourceView)
 	{
 		m_resourceView->Release();
-		delete m_resourceView;
 		m_resourceView = 0;
 	}
 
 	if (m_unorderedAccessView)
 	{
 		m_unorderedAccessView->Release();
-		delete m_unorderedAccessView;
 		m_unorderedAccessView = 0;
 	}
 }

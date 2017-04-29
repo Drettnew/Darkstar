@@ -14,6 +14,24 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 	D3D11_BUFFER_DESC cameraBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
 
+	//TEMP--------------------------------------------------
+	D3D11_SUBRESOURCE_DATA data;
+	Light* templight = new Light[2];
+
+	templight[0].m_Color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	templight[0].m_PositionWS = XMFLOAT4(0.0f, 3.0f, 0.0f, 1.0f);
+
+	templight[1].m_Color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	templight[1].m_PositionWS = XMFLOAT4(3.0f, 3.0f, 0.0f, 1.0f);
+
+	ZeroMemory(&data, sizeof(data));
+	data.pSysMem = templight;
+
+	m_structuredBuffer.Initialize(2, sizeof(Light), true, false, &data, device);
+	m_structuredBuffer.InitializeResourceView(device);
+
+	delete templight;
+
 	//Initialize the pointers this function will use to null
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
@@ -185,6 +203,8 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 
 void LightShader::ShutdownShader()
 {
+	m_structuredBuffer.Shutdown();
+
 	// Release the camera constant buffer.
 	if (m_cameraBuffer)
 	{
@@ -351,6 +371,11 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 
 	//Set shader texture resource in the pixel shader
 	deviceContext->PSSetShaderResources(0, 1, &texture);
+
+	ID3D11ShaderResourceView* ptr = m_structuredBuffer.GetResourceView();
+
+	//TEMP LIGHT STRUCTURED BUFFER TEST
+	deviceContext->PSSetShaderResources(1, 1, &ptr);
 
 	//Lock the camera constant buffer so it can be written to
 	result = deviceContext->Map(m_cameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);

@@ -179,6 +179,7 @@
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="StructureBuffer.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="TextureAsset.h" />
     <ClInclude Include="TextureShader.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="ModelList.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="Position.cpp" />
+    <ClCompile Include="StructureBuffer.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="TextureAsset.cpp" />
     <ClCompile Include="TextureShader.cpp" />
