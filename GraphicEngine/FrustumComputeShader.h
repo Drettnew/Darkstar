@@ -21,6 +21,12 @@ class FrustumComputeShader
 		XMUINT3 numThreads;
 		XMUINT2 padding;
 	};
+
+	struct ScreenToViewParams
+	{
+		XMMATRIX InverseProjectionMatrix;
+		XMFLOAT2 ScreenDimensions;
+	};
 public:
 	FrustumComputeShader();
 	~FrustumComputeShader();

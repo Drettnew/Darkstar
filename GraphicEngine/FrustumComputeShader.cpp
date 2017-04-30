@@ -47,7 +47,7 @@ bool FrustumComputeShader::Initialize(ID3D11Device * device, HWND hwnd)
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	StoVBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	StoVBufferDesc.ByteWidth = sizeof(dispatchBufferDesc);
+	StoVBufferDesc.ByteWidth = sizeof(ScreenToViewParams);
 	StoVBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	StoVBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	StoVBufferDesc.MiscFlags = 0;
@@ -68,6 +68,7 @@ bool FrustumComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceConte
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	DispatchParams* dataPtr;
+	ScreenToViewParams* dataPtr2;
 
 	//Lock the light constant buffer so it can be written to
 	result = deviceContext->Map(m_dispatchBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -79,14 +80,33 @@ bool FrustumComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceConte
 	//Get a pointer to the data in the constant buffer
 	dataPtr = (DispatchParams*)mappedResource.pData;
 
-	XMMATRIX invProjMatrix = XMMatrixInverse(nullptr, projectionMatrix);
-	invProjMatrix = XMMatrixTranspose(invProjMatrix);
-
 	dataPtr->numThreadGroups = m_dispatchParameters.numThreadGroups;
 	dataPtr->numThreads = m_dispatchParameters.numThreads;
 
 	//Unlock the constant buffer
 	deviceContext->Unmap(m_dispatchBuffer, 0);
+
+	deviceContext->CSSetConstantBuffers(0, 1, &m_dispatchBuffer);
+
+	//Lock the light constant buffer so it can be written to
+	result = deviceContext->Map(m_StoVParamBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	dataPtr2 = (ScreenToViewParams*)mappedResource.pData;
+
+	XMMATRIX invProjMatrix = XMMatrixInverse(nullptr, projectionMatrix);
+	invProjMatrix = XMMatrixTranspose(invProjMatrix);
+
+	dataPtr2->InverseProjectionMatrix = invProjMatrix;
+	dataPtr2->ScreenDimensions = XMFLOAT2(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	//Unlock the constant buffer
+	deviceContext->Unmap(m_StoVParamBuffer, 0);
+
+	deviceContext->CSSetConstantBuffers(1, 1, &m_StoVParamBuffer);
 
 	return true;
 }
@@ -194,5 +214,5 @@ void FrustumComputeShader::Dispatch(ID3D11DeviceContext* deviceContext, int x, i
 
 	deviceContext->CSSetUnorderedAccessViews(0, 1, &AccessView, 0);
 
-	deviceContext->Dispatch(x, y, z);
+	deviceContext->Dispatch(m_dispatchParameters.numThreadGroups.x, m_dispatchParameters.numThreadGroups.y, m_dispatchParameters.numThreadGroups.z);
 }

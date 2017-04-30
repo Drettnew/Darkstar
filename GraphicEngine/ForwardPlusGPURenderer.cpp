@@ -109,7 +109,8 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 		return false;
 	}
 
-	m_frustumCS->Dispatch(directX->GetDeviceContext(), 1, 1, 1);
+	m_frustumCS->SetShaderParameters(directX->GetDeviceContext(), projectionMatrix);
+	m_frustumCS->Dispatch(directX->GetDeviceContext(), 16, 16, 1);
 
 	return true;
 }
