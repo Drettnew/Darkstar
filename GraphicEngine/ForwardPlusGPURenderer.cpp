@@ -4,6 +4,7 @@ ForwardPlusGPU::ForwardPlusGPU()
 {
 	m_Shader = 0;
 	m_depthPrePass = 0;
+	m_frustumCS = 0;
 }
 
 ForwardPlusGPU::~ForwardPlusGPU()
@@ -42,7 +43,20 @@ bool ForwardPlusGPU::Initialize(ID3D11Device * device, ID3D11DeviceContext* devi
 		return false;
 	}
 
-	m_lightList.Random(10, 10, 4);
+	m_frustumCS = new FrustumComputeShader;
+	if (!m_frustumCS)
+	{
+		return false;
+	}
+
+	result = m_frustumCS->Initialize(device, hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the frustum compute shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_lightList.Random(15, 15, 4);
 
 	return true;
 }
@@ -62,6 +76,13 @@ void ForwardPlusGPU::Shutdown()
 		m_depthPrePass->Shutdown();
 		delete m_depthPrePass;
 		m_depthPrePass = 0;
+	}
+
+	if (m_frustumCS)
+	{
+		m_frustumCS->Shutdown();
+		delete m_frustumCS;
+		m_frustumCS = 0;
 	}
 }
 
@@ -87,6 +108,8 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 	{
 		return false;
 	}
+
+	m_frustumCS->Dispatch(directX->GetDeviceContext(), 1, 1, 1);
 
 	return true;
 }

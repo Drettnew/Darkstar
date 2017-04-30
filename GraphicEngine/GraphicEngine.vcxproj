@@ -169,6 +169,7 @@
     <ClInclude Include="ForwardPlusGPURenderer.h" />
     <ClInclude Include="ForwardRenderer.h" />
     <ClInclude Include="Frustum.h" />
+    <ClInclude Include="FrustumComputeShader.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Importer.h" />
     <ClInclude Include="Light.h" />
@@ -197,6 +198,7 @@
     <ClCompile Include="ForwardPlusGPURenderer.cpp" />
     <ClCompile Include="ForwardRenderer.cpp" />
     <ClCompile Include="Frustum.cpp" />
+    <ClCompile Include="FrustumComputeShader.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="LightShader.cpp" />
@@ -216,6 +218,7 @@
     <FxCompile Include="Shaders\depth_vs.hlsl" />
     <FxCompile Include="Shaders\Font_ps.hlsl" />
     <FxCompile Include="Shaders\Font_vs.hlsl" />
+    <FxCompile Include="Shaders\frustum_cs.hlsl" />
     <FxCompile Include="Shaders\light_ps.hlsl" />
     <FxCompile Include="Shaders\light_vs.hlsl" />
     <FxCompile Include="Shaders\texture_ps.hlsl" />

@@ -51,7 +51,7 @@ struct Light
 		, m_SpotlightAngle(45.0f)
 		, m_Range(20.0f)
 		, m_Intensity(1.0f)
-		, m_Enabled(true)
+		, m_Enabled(false)
 		, m_Type(LightType::Point)
 	{}
 };

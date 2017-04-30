@@ -105,6 +105,9 @@
     <ClInclude Include="StructureBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FrustumComputeShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics.cpp">
@@ -176,6 +179,9 @@
     <ClCompile Include="StructureBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FrustumComputeShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\color_ps.hlsl">
@@ -203,6 +209,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\depth_vs.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\frustum_cs.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

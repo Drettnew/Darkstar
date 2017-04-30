@@ -16,18 +16,12 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 
 	//TEMP--------------------------------------------------
 	D3D11_SUBRESOURCE_DATA data;
-	Light* templight = new Light[2];
-
-	templight[0].m_Color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	templight[0].m_PositionWS = XMFLOAT4(0.0f, 3.0f, 0.0f, 1.0f);
-
-	templight[1].m_Color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	templight[1].m_PositionWS = XMFLOAT4(3.0f, 3.0f, 0.0f, 1.0f);
+	Light* templight = new Light[4];
 
 	ZeroMemory(&data, sizeof(data));
 	data.pSysMem = templight;
 
-	m_structuredBuffer.Initialize(2, sizeof(Light), true, false, &data, device);
+	m_structuredBuffer.Initialize(4, sizeof(Light), true, false, &data, device);
 	m_structuredBuffer.InitializeResourceView(device);
 
 	delete templight;
@@ -293,19 +287,19 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* dataPtr;
-	LightBufferType* dataPtr2;
+	Light* dataPtr2;
 	CameraBufferType* dataPtr3;
 	unsigned int bufferNumber;
 
 	//Lock the light constant buffer so it can be written to
-	result = deviceContext->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = deviceContext->Map(m_structuredBuffer.GetBuffer(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
 	//Get a pointer to the data in the constant buffer
-	dataPtr2 = (LightBufferType*)mappedResource.pData;
+	dataPtr2 = (Light*)mappedResource.pData;
 
 	//viewMatrix = XMMatrixTranspose(viewMatrix);
 
@@ -316,29 +310,28 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 		Light light = lights[i];
 
 		//Copy the lighting variables into the constant buffer
-		dataPtr2->light[i].m_Color = light.m_Color;
+		dataPtr2[i].m_Color = light.m_Color;
 
-		dataPtr2->light[i].m_DirectionVS = light.m_DirectionVS;
-		dataPtr2->light[i].m_DirectionWS = light.m_DirectionWS;
+		dataPtr2[i].m_DirectionVS = light.m_DirectionVS;
+		dataPtr2[i].m_DirectionWS = light.m_DirectionWS;
 
-		dataPtr2->light[i].m_PositionVS = light.m_PositionVS;
-		dataPtr2->light[i].m_PositionWS = light.m_PositionWS;
+		dataPtr2[i].m_PositionVS = light.m_PositionVS;
+		dataPtr2[i].m_PositionWS = light.m_PositionWS;
 
-		dataPtr2->light[i].m_Range = light.m_Range;
-		dataPtr2->light[i].m_Intensity = light.m_Intensity;
-		dataPtr2->light[i].m_Enabled = light.m_Enabled;
-		dataPtr2->light[i].m_SpotlightAngle = light.m_SpotlightAngle;
-		dataPtr2->light[i].m_Type = light.m_Type;
+		dataPtr2[i].m_Range = light.m_Range;
+		dataPtr2[i].m_Intensity = light.m_Intensity;
+		dataPtr2[i].m_Enabled = light.m_Enabled;
+		dataPtr2[i].m_SpotlightAngle = light.m_SpotlightAngle;
+		dataPtr2[i].m_Type = light.m_Type;
 	}
 
 	//Unlock the constant buffer
-	deviceContext->Unmap(m_lightBuffer, 0);
+	deviceContext->Unmap(m_structuredBuffer.GetBuffer(), 0);
 
-	//Set the positiion of the light constant buffer in the pixel shader
-	bufferNumber = 0;
+	ID3D11ShaderResourceView* ptr = m_structuredBuffer.GetResourceView();
 
-	//finally set the light constant buffer in the pixel shader with the updated values
-	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+	//TEMP LIGHT STRUCTURED BUFFER TEST
+	deviceContext->PSSetShaderResources(1, 1, &ptr);
 
 	// Transpose the matrices to prepare them for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -371,11 +364,6 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 
 	//Set shader texture resource in the pixel shader
 	deviceContext->PSSetShaderResources(0, 1, &texture);
-
-	ID3D11ShaderResourceView* ptr = m_structuredBuffer.GetResourceView();
-
-	//TEMP LIGHT STRUCTURED BUFFER TEST
-	deviceContext->PSSetShaderResources(1, 1, &ptr);
 
 	//Lock the camera constant buffer so it can be written to
 	result = deviceContext->Map(m_cameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);

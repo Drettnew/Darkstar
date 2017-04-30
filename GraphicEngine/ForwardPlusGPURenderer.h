@@ -7,6 +7,7 @@
 #include "Light.h"
 #include "Model.h"
 #include "DepthPass.h"
+#include "FrustumComputeShader.h"
 
 class ForwardPlusGPU
 {
@@ -21,7 +22,8 @@ public:
 
 private:
 	LightList m_lightList;
-	LightShader* m_Shader;
 
+	LightShader* m_Shader;
+	FrustumComputeShader* m_frustumCS;
 	DepthPass* m_depthPrePass;
 };

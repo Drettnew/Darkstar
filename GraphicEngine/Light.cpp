@@ -42,7 +42,7 @@ void LightList::Random(float maxX, float maxY, int numLights)
 
 		float z = (-maxY) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (maxY + maxY)));
 
-		float range = ((float)rand() / (RAND_MAX / 10.0f));
+		float range = 2 + ((float)rand() / (RAND_MAX / 5.0f));
 
 		float intensity = 2 + ((float)rand() / (RAND_MAX / 5.0f));
 
@@ -54,7 +54,7 @@ void LightList::Random(float maxX, float maxY, int numLights)
 		light.m_Color = XMFLOAT4(red, green, blue, 1.0f);
 		light.m_DirectionWS = XMFLOAT4(dirX, -1, dirZ, 1.0f);
 
-		light.m_PositionWS = XMFLOAT4(x, 5.0f, z, 1.0f);
+		light.m_PositionWS = XMFLOAT4(x, 2.0f, z, 1.0f);
 
 		light.m_Range = range;
 		light.m_Intensity = intensity;

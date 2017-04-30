@@ -71,14 +71,8 @@ struct PixelInputType
 };
 
 //GLOBALS
-Texture2D shaderTexture;
+Texture2D shaderTexture : register(t0);
 SamplerState SampleType;
-
-cbuffer LightBuffer
-{
-    //Temp
-    Light light[4];
-};  //-------------------------- ( 112 * 1 = 112 bytes )
 
 struct LightingResult
 {
@@ -193,7 +187,7 @@ float4 LightPixelShader(PixelInputType input) : SV_Target
 
     LightingResult totalResult = (LightingResult) 0;
 
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 4; i++)
     {
         
         float3 lightPositionVS = mul(LightBuffer[i].PositionWS.xyz, (float3x3) input.mat);

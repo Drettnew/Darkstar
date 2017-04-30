@@ -11,9 +11,11 @@ public:
 	void Shutdown();
 
 	void InitializeResourceView(ID3D11Device* device);
-	void InitializeAccessView();
+	void InitializeAccessView(ID3D11Device* device);
 
 	ID3D11ShaderResourceView* GetResourceView();
+	ID3D11Buffer* GetBuffer();
+	ID3D11UnorderedAccessView* GetUnorderedAccessView();
 
 private:
 	ID3D11Buffer* m_buffer;
