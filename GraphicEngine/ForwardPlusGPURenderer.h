@@ -8,6 +8,8 @@
 #include "Model.h"
 #include "DepthPass.h"
 #include "FrustumComputeShader.h"
+#include "CullingComputeShader.h"
+#include "Light.h"
 
 class ForwardPlusGPU
 {
@@ -21,9 +23,16 @@ public:
 	bool Render(D3D* directX, Camera* camera, Model* model);
 
 private:
+	const static int NUM_LIGHTS = 1;
+	StructuredBuffer m_StructuredLightBuffer;
+
 	LightList m_lightList;
 
 	LightShader* m_Shader;
-	FrustumComputeShader* m_frustumCS;
+	FrustumComputeShader* m_FrustumCS;
 	DepthPass* m_depthPrePass;
+
+	CullingComputeShader* m_CullingCS;
+
+	bool m_HasGeneratedFrustum = false;
 };

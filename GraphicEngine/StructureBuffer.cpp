@@ -11,7 +11,7 @@ StructuredBuffer::~StructuredBuffer()
 {
 }
 
-bool StructuredBuffer::Initialize(UINT count, UINT structSize, bool CPUWritable, bool GPUWritable, D3D11_SUBRESOURCE_DATA * data, ID3D11Device* device)
+bool StructuredBuffer::Initialize(UINT count, UINT structSize, bool CPUWritable, bool GPUWritable, const void* data, ID3D11Device* device)
 {
 	HRESULT result;
 
@@ -47,7 +47,25 @@ bool StructuredBuffer::Initialize(UINT count, UINT structSize, bool CPUWritable,
 		return false;
 	}
 
-	result = device->CreateBuffer(&desc, data, &m_buffer);
+	// Assign the data to the system buffer.
+	size_t numBytes = count * structSize;
+	std::vector<unsigned char> m_data;
+
+	if (data)
+	{
+		m_data.assign((uint8_t*)data, (uint8_t*)data + numBytes);
+	}
+	else
+	{
+		m_data.reserve(numBytes);
+	}
+
+	D3D11_SUBRESOURCE_DATA subResourceData;
+	subResourceData.pSysMem = (void*)m_data.data();
+	subResourceData.SysMemPitch = 0;
+	subResourceData.SysMemSlicePitch = 0;
+
+	result = device->CreateBuffer(&desc, &subResourceData, &m_buffer);
 
 	if (FAILED(result))
 	{
@@ -118,9 +136,14 @@ void StructuredBuffer::InitializeAccessView(ID3D11Device * device)
 	result = device->CreateUnorderedAccessView(m_buffer, &desc, &m_unorderedAccessView);
 }
 
-ID3D11ShaderResourceView * StructuredBuffer::GetResourceView()
+void StructuredBuffer::Copy(ID3D11DeviceContext* deviceContext, StructuredBuffer * structuredBuffer)
 {
-	return m_resourceView;
+	deviceContext->CopyResource(m_buffer, structuredBuffer->GetBuffer());
+}
+
+ID3D11ShaderResourceView * const * StructuredBuffer::GetResourceView()
+{
+	return &m_resourceView;
 }
 
 ID3D11Buffer * StructuredBuffer::GetBuffer()
@@ -128,7 +151,7 @@ ID3D11Buffer * StructuredBuffer::GetBuffer()
 	return m_buffer;
 }
 
-ID3D11UnorderedAccessView * StructuredBuffer::GetUnorderedAccessView()
+ID3D11UnorderedAccessView * const * StructuredBuffer::GetUnorderedAccessView()
 {
-	return m_unorderedAccessView;
+	return &m_unorderedAccessView;
 }

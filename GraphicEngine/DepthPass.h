@@ -23,6 +23,9 @@ public:
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd);
 	void Shutdown();
 
+	void Bind(ID3D11DeviceContext* deviceContext, UINT startSlot);
+	void Unbind(ID3D11DeviceContext* deviceContext, UINT startSlot);
+
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 		XMMATRIX projectionMatrix);
 

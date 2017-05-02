@@ -162,6 +162,7 @@
     <ClInclude Include="Bitmap.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ColorShader.h" />
+    <ClInclude Include="CullingComputeShader.h" />
     <ClInclude Include="D3D.h" />
     <ClInclude Include="DepthPass.h" />
     <ClInclude Include="Font.h" />
@@ -191,6 +192,7 @@
     <ClCompile Include="Bitmap.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ColorShader.cpp" />
+    <ClCompile Include="CullingComputeShader.cpp" />
     <ClCompile Include="D3D.cpp" />
     <ClCompile Include="DepthPass.cpp" />
     <ClCompile Include="Font.cpp" />
@@ -215,6 +217,7 @@
   <ItemGroup>
     <FxCompile Include="Shaders\color_ps.hlsl" />
     <FxCompile Include="Shaders\color_vs.hlsl" />
+    <FxCompile Include="Shaders\culling_cs.hlsl" />
     <FxCompile Include="Shaders\depth_vs.hlsl" />
     <FxCompile Include="Shaders\Font_ps.hlsl" />
     <FxCompile Include="Shaders\Font_vs.hlsl" />

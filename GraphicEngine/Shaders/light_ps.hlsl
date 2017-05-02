@@ -187,13 +187,13 @@ float4 LightPixelShader(PixelInputType input) : SV_Target
 
     LightingResult totalResult = (LightingResult) 0;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 1; i++)
     {
         
-        float3 lightPositionVS = mul(LightBuffer[i].PositionWS.xyz, (float3x3) input.mat);
-        float3 DirectionVS = mul(LightBuffer[i].DirectionWS.xyz, (float3x3) input.mat);
+        //float3 lightPositionVS = mul(LightBuffer[i].PositionWS.xyz, (float3x3) input.mat);
+        //float3 DirectionVS = mul(LightBuffer[i].DirectionWS.xyz, (float3x3) input.mat);
 
-        lightDir = lightPositionVS - positionVS;
+        lightDir = LightBuffer[i].PositionVS.xyz - positionVS;
 
         LightingResult result = (LightingResult) 0;
 
@@ -212,12 +212,12 @@ float4 LightPixelShader(PixelInputType input) : SV_Target
                 break;
                 case SPOT_LIGHT:
                 {
-                    result = DoSpotLight(LightBuffer[i], viewDirVS, lightDir, normalVS, DirectionVS);
+                    result = DoSpotLight(LightBuffer[i], viewDirVS, lightDir, normalVS, LightBuffer[i].DirectionVS.xyz);
                 }
                 break;
                 case DIRECTIONAL_LIGHT:
                 {
-                    result = DoDirectionalLight(LightBuffer[i], viewDirVS, lightDir, normalVS, DirectionVS);
+                    result = DoDirectionalLight(LightBuffer[i], viewDirVS, lightDir, normalVS, LightBuffer[i].DirectionVS.xyz);
                 }
                 break;
         }

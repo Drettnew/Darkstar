@@ -39,6 +39,17 @@ void DepthPass::Shutdown()
 	ShutdownDepthStencilView();
 }
 
+void DepthPass::Bind(ID3D11DeviceContext * deviceContext, UINT startSlot)
+{
+	deviceContext->CSSetShaderResources(startSlot, 1, &m_resourceView);
+}
+
+void DepthPass::Unbind(ID3D11DeviceContext * deviceContext, UINT startSlot)
+{
+	ID3D11ShaderResourceView* resource = { nullptr };
+	deviceContext->CSSetShaderResources(startSlot, 1, &resource);
+}
+
 bool DepthPass::Render(ID3D11DeviceContext * deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
 {
 	bool result;
@@ -217,8 +228,8 @@ bool DepthPass::InitializeDepthStencilView(ID3D11Device * device, ID3D11DeviceCo
 {
 	HRESULT result;
 
-	int screenWidth = 800;
-	int screenHeight = 600;
+	int screenWidth = 1280;
+	int screenHeight = 720;
 
 	D3D11_TEXTURE2D_DESC textureDesc;
 	textureDesc.Width = screenWidth;

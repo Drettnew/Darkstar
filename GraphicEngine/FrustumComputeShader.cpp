@@ -24,8 +24,7 @@ bool FrustumComputeShader::Initialize(ID3D11Device * device, HWND hwnd)
 	m_dispatchParameters.numThreads = XMUINT3(std::ceil(SCREEN_WIDTH / (float)BLOCK_SIZE), std::ceil(SCREEN_HEIGHT / (float)BLOCK_SIZE), 1);
 	m_dispatchParameters.numThreadGroups = XMUINT3(std::ceil(m_dispatchParameters.numThreads.x / (float)BLOCK_SIZE), std::ceil(m_dispatchParameters.numThreads.y / (float)BLOCK_SIZE), 1);
 	
-	m_structuredBuffer.Initialize(m_dispatchParameters.numThreads.x * m_dispatchParameters.numThreads.y * m_dispatchParameters.numThreads.z, sizeof(FrustumComputeShader::Frustum), false, true, NULL, device);
-	m_structuredBuffer.InitializeAccessView(device);
+	CreateStructuredBuffer(device);
 
 	D3D11_BUFFER_DESC dispatchBufferDesc;
 	D3D11_BUFFER_DESC StoVBufferDesc;
@@ -113,6 +112,31 @@ bool FrustumComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceConte
 
 void FrustumComputeShader::Shutdown()
 {
+	ShutdownShader();
+	m_structuredBuffer.Shutdown();
+}
+
+void FrustumComputeShader::Bind(ID3D11DeviceContext * deviceContext, UINT startSlot)
+{
+	deviceContext->CSSetShaderResources(startSlot, 1, m_structuredBuffer.GetResourceView());
+}
+
+void FrustumComputeShader::Unbind(ID3D11DeviceContext * deviceContext, UINT startSlot)
+{
+	ID3D11ShaderResourceView* resource = { nullptr };
+	deviceContext->CSSetShaderResources(startSlot, 1, &resource);
+}
+
+void FrustumComputeShader::CreateStructuredBuffer(ID3D11Device * device)
+{
+	m_structuredBuffer.Initialize(m_dispatchParameters.numThreads.x * m_dispatchParameters.numThreads.y * m_dispatchParameters.numThreads.z, sizeof(FrustumComputeShader::Frustum), false, true, NULL, device);
+	m_structuredBuffer.InitializeAccessView(device);
+	m_structuredBuffer.InitializeResourceView(device);
+}
+
+void FrustumComputeShader::DestroyStructuredBuffer()
+{
+	m_structuredBuffer.Shutdown();
 }
 
 bool FrustumComputeShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * filename)
@@ -149,6 +173,9 @@ bool FrustumComputeShader::InitializeShader(ID3D11Device * device, HWND hwnd, WC
 		return false;
 	}
 
+	computeShader->Release();
+	computeShader = 0;
+
 	return true;
 }
 
@@ -163,7 +190,7 @@ void FrustumComputeShader::ShutdownShader()
 	if (m_dispatchBuffer)
 	{
 		m_dispatchBuffer->Release();
-		m_StoVParamBuffer = 0;
+		m_dispatchBuffer = 0;
 	}
 
 	if (m_StoVParamBuffer)
@@ -206,13 +233,12 @@ void FrustumComputeShader::OutputShaderErrorMessage(ID3D10Blob * errorMessage, H
 	MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
-void FrustumComputeShader::Dispatch(ID3D11DeviceContext* deviceContext, int x, int y, int z)
+void FrustumComputeShader::Dispatch(ID3D11DeviceContext* deviceContext, ID3D11Device * device, int x, int y, int z)
 {
+
 	deviceContext->CSSetShader(m_computeShader, NULL, 0);
 
-	ID3D11UnorderedAccessView* AccessView = m_structuredBuffer.GetUnorderedAccessView();
-
-	deviceContext->CSSetUnorderedAccessViews(0, 1, &AccessView, 0);
+	deviceContext->CSSetUnorderedAccessViews(0, 1, m_structuredBuffer.GetUnorderedAccessView(), 0);
 
 	deviceContext->Dispatch(m_dispatchParameters.numThreadGroups.x, m_dispatchParameters.numThreadGroups.y, m_dispatchParameters.numThreadGroups.z);
 }

@@ -16,12 +16,12 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 
 	//TEMP--------------------------------------------------
 	D3D11_SUBRESOURCE_DATA data;
-	Light* templight = new Light[4];
+	Light* templight = new Light[1];
 
 	ZeroMemory(&data, sizeof(data));
 	data.pSysMem = templight;
 
-	m_structuredBuffer.Initialize(4, sizeof(Light), true, false, &data, device);
+	m_structuredBuffer.Initialize(1, sizeof(Light), true, false, &data, device);
 	m_structuredBuffer.InitializeResourceView(device);
 
 	delete templight;
@@ -301,9 +301,11 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 	//Get a pointer to the data in the constant buffer
 	dataPtr2 = (Light*)mappedResource.pData;
 
-	//viewMatrix = XMMatrixTranspose(viewMatrix);
+	viewMatrix = XMMatrixTranspose(viewMatrix);
 
 	std::vector<Light> lights = lightList->GetLightList();
+
+	XMVECTOR xmvector;
 
 	for (int i = 0; i < lights.size(); i++)
 	{
@@ -312,11 +314,21 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 		//Copy the lighting variables into the constant buffer
 		dataPtr2[i].m_Color = light.m_Color;
 
-		dataPtr2[i].m_DirectionVS = light.m_DirectionVS;
+		xmvector = XMLoadFloat4(&light.m_DirectionWS);
+		xmvector = XMVector3Transform(xmvector, viewMatrix);
+		XMStoreFloat4(&dataPtr2[i].m_DirectionVS, xmvector);
+
+		//dataPtr2[i].m_DirectionVS = light.m_DirectionVS;
 		dataPtr2[i].m_DirectionWS = light.m_DirectionWS;
 
-		dataPtr2[i].m_PositionVS = light.m_PositionVS;
+		xmvector = XMLoadFloat4(&light.m_PositionWS);
+		xmvector = XMVector3Transform(xmvector, viewMatrix);
+		XMStoreFloat4(&dataPtr2[i].m_PositionVS, xmvector);
+
+		//dataPtr2[i].m_PositionVS = light.m_PositionVS;
 		dataPtr2[i].m_PositionWS = light.m_PositionWS;
+
+
 
 		dataPtr2[i].m_Range = light.m_Range;
 		dataPtr2[i].m_Intensity = light.m_Intensity;
@@ -328,14 +340,12 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 	//Unlock the constant buffer
 	deviceContext->Unmap(m_structuredBuffer.GetBuffer(), 0);
 
-	ID3D11ShaderResourceView* ptr = m_structuredBuffer.GetResourceView();
-
 	//TEMP LIGHT STRUCTURED BUFFER TEST
-	deviceContext->PSSetShaderResources(1, 1, &ptr);
+	deviceContext->PSSetShaderResources(1, 1, m_structuredBuffer.GetResourceView());
 
 	// Transpose the matrices to prepare them for the shader.
 	worldMatrix = XMMatrixTranspose(worldMatrix);
-	viewMatrix = XMMatrixTranspose(viewMatrix);
+	//viewMatrix = XMMatrixTranspose(viewMatrix);
 	projectionMatrix = XMMatrixTranspose(projectionMatrix);
 
 	// Lock the constant buffer so it can be written to.
