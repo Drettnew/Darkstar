@@ -22,15 +22,17 @@ struct ComputeShaderInput
     uint groupIndex : SV_GroupIndex; // Flattened local index of the thread within a thread group.
 };
 
+// Global variables
 cbuffer DispatchParams : register(b0)
 {
     // Number of groups dispatched. (This parameter is not available as an HLSL system value!)
     uint3 numThreadGroups;
+    // uint padding // implicit padding to 16 bytes.
     // Total number of threads dispatched. (Also not available as an HLSL system value!)
     // Note: This value may be less than the actual number of threads executed 
     // if the screen size is not evenly divisible by the block size.
     uint3 numThreads;
-    uint2 padding; // implicit padding to 16 bytes.
+    // uint padding // implicit padding to 16 bytes.
 }
 
 // Parameters required to convert screen space coordinates to view space params.
@@ -38,13 +40,14 @@ cbuffer ScreenToViewParams : register(b1)
 {
     float4x4 InverseProjection;
     float2 ScreenDimensions;
+    float2 Padding;
 }
 
 // Convert clip space coordinates to view space
 float4 ClipToView(float4 clip)
 {
     // View space position.
-    float4 view = mul(InverseProjection, clip);
+    float4 view = mul(clip, InverseProjection);
     // Perspecitive projection.
     view = view / view.w;
 
@@ -66,14 +69,12 @@ float4 ScreenToView(float4 screen)
 Plane ComputePlane(float3 p0, float3 p1, float3 p2)
 {
     Plane plane;
-    float3 v0 = p1 - p0;
-    float3 v1 = p2 - p0;
-
-    plane.N = normalize(cross(v0, v1));
-
-    //Compute the distance to origin using p0
+ 
+    plane.N = normalize(cross(p1, p2));
+ 
+    // Compute the distance to the origin using p0.
     plane.d = dot(plane.N, p0);
-
+ 
     return plane;
 }
 
@@ -88,14 +89,15 @@ void FrustumComputeShader(ComputeShaderInput input)
     // Compute 4 points on the far clipping plane to use as the 
     // frustum vertices.
     float4 screenSpace[4];
-    // Top left point
-    screenSpace[0] = float4(input.dispatchThreadID.xy * BLOCK_SIZE, -1.0f, 1.0f);
-    // Top right point
-    screenSpace[1] = float4(float2(input.dispatchThreadID.x + 1, input.dispatchThreadID.y) * BLOCK_SIZE, -1.0f, 1.0f);
-    // Bottom left point
-    screenSpace[2] = float4(float2(input.dispatchThreadID.x, input.dispatchThreadID.y + 1) * BLOCK_SIZE, -1.0f, 1.0f);
-    // Bottom right point
-    screenSpace[3] = float4(float2(input.dispatchThreadID.x + 1, input.dispatchThreadID.y + 1) * BLOCK_SIZE, -1.0f, 1.0f);
+	// Top left point
+    screenSpace[0] = float4(input.dispatchThreadID.xy * BLOCK_SIZE, 1.0f, 1.0f);
+	// Top right point
+    screenSpace[1] = float4(float2(input.dispatchThreadID.x + 1, input.dispatchThreadID.y) * BLOCK_SIZE, 1.0f, 1.0f);
+	// Bottom left point
+    screenSpace[2] = float4(float2(input.dispatchThreadID.x, input.dispatchThreadID.y + 1) * BLOCK_SIZE, 1.0f, 1.0f);
+	// Bottom right point
+    screenSpace[3] = float4(float2(input.dispatchThreadID.x + 1, input.dispatchThreadID.y + 1) * BLOCK_SIZE, 1.0f, 1.0f);
+
 
     float3 viewSpace[4];
     // Now convert the screen space points to view space
@@ -107,13 +109,13 @@ void FrustumComputeShader(ComputeShaderInput input)
     // Now build the frustum planes from the view space points
     Frustum frustum;
 
-    // Left plane
+	// Left plane
     frustum.planes[0] = ComputePlane(eyePos, viewSpace[2], viewSpace[0]);
-    // Right plane
+	// Right plane
     frustum.planes[1] = ComputePlane(eyePos, viewSpace[1], viewSpace[3]);
-    // Top plane
+	// Top plane
     frustum.planes[2] = ComputePlane(eyePos, viewSpace[0], viewSpace[1]);
-    // Bottom plane
+	// Bottom plane
     frustum.planes[3] = ComputePlane(eyePos, viewSpace[3], viewSpace[2]);
 
     // Store the computed frustum in global memory (if our thread ID is in bounds of the grid).

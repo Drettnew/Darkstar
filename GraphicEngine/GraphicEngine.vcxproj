@@ -167,6 +167,7 @@
     <ClInclude Include="DepthPass.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FontShader.h" />
+    <ClInclude Include="Forward+LightShader.h" />
     <ClInclude Include="ForwardPlusGPURenderer.h" />
     <ClInclude Include="ForwardRenderer.h" />
     <ClInclude Include="Frustum.h" />
@@ -197,6 +198,7 @@
     <ClCompile Include="DepthPass.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FontShader.cpp" />
+    <ClCompile Include="Forward+LightShader.cpp" />
     <ClCompile Include="ForwardPlusGPURenderer.cpp" />
     <ClCompile Include="ForwardRenderer.cpp" />
     <ClCompile Include="Frustum.cpp" />
@@ -221,6 +223,8 @@
     <FxCompile Include="Shaders\depth_vs.hlsl" />
     <FxCompile Include="Shaders\Font_ps.hlsl" />
     <FxCompile Include="Shaders\Font_vs.hlsl" />
+    <FxCompile Include="Shaders\ForwardPlusLight_ps.hlsl" />
+    <FxCompile Include="Shaders\ForwardPlusLight_vs.hlsl" />
     <FxCompile Include="Shaders\frustum_cs.hlsl" />
     <FxCompile Include="Shaders\light_ps.hlsl" />
     <FxCompile Include="Shaders\light_vs.hlsl" />

@@ -109,9 +109,9 @@ void StructuredBuffer::InitializeResourceView(ID3D11Device* device)
 
 	//For structured buffers DXGI_FORMAT_UNKOWN must be used
 	desc.Format = DXGI_FORMAT_UNKNOWN;
-	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	desc.BufferEx.FirstElement = 0;
-	desc.BufferEx.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
+	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	desc.Buffer.FirstElement = 0;
+	desc.Buffer.NumElements = descBuf.ByteWidth / descBuf.StructureByteStride;
 	result = device->CreateShaderResourceView(m_buffer, &desc, &m_resourceView);
 }
 

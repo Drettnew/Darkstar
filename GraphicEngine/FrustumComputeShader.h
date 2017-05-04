@@ -15,17 +15,20 @@ class FrustumComputeShader
 		XMFLOAT4 planes[4];
 	};
 
-	struct DispatchParams
+	// Constant buffer to store the number of groups executed in a dispatch.
+	__declspec(align(16)) struct DispatchParams
 	{
 		XMUINT3 numThreadGroups;
+		uint32_t padding0;        // Pad to 16 bytes.
 		XMUINT3 numThreads;
-		XMUINT2 padding;
+		uint32_t padding1;        // Pad to 16 bytes.
 	};
 
-	struct ScreenToViewParams
+	__declspec(align(16)) struct ScreenToViewParams
 	{
 		XMMATRIX InverseProjectionMatrix;
 		XMFLOAT2 ScreenDimensions;
+		XMFLOAT2 Padding;
 	};
 public:
 	FrustumComputeShader();

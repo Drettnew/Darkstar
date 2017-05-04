@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "D3D.h"
 #include "LightShader.h"
+#include "Forward+LightShader.h"
 #include "Light.h"
 #include "Model.h"
 #include "DepthPass.h"
@@ -23,12 +24,12 @@ public:
 	bool Render(D3D* directX, Camera* camera, Model* model);
 
 private:
-	const static int NUM_LIGHTS = 1;
+	const static int NUM_LIGHTS = 2;
 	StructuredBuffer m_StructuredLightBuffer;
 
 	LightList m_lightList;
 
-	LightShader* m_Shader;
+	ForwardPlusLightShader* m_Shader;
 	FrustumComputeShader* m_FrustumCS;
 	DepthPass* m_depthPrePass;
 

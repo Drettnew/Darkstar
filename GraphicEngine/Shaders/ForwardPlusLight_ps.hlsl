@@ -1,4 +1,9 @@
 //TYPEDEFS
+#ifndef BLOCK_SIZE
+#pragma message( "BLOCK_SIZE undefined. Default to 16.")
+#define BLOCK_SIZE 16 // should be defined by the application.
+#endif
+
 #define POINT_LIGHT 0
 #define SPOT_LIGHT 1
 #define DIRECTIONAL_LIGHT 2
@@ -165,9 +170,11 @@ LightingResult DoDirectionalLight(Light light, float3 viewDir, float3 position, 
 }
 
 StructuredBuffer<Light> LightBuffer : register(t1);
+StructuredBuffer<uint> LightIndexList : register(t2);
+Texture2D<uint2> LightGrid : register(t3);
 
 //Pixel Shader
-float4 LightPixelShader(PixelInputType input) : SV_Target
+float4 ForwardPlusLightPixelShader(PixelInputType input) : SV_Target
 {
     float4 textureColor;
     float3 lightDir;
@@ -191,37 +198,45 @@ float4 LightPixelShader(PixelInputType input) : SV_Target
 
     LightingResult totalResult = (LightingResult) 0;
 
-    for (int i = 0; i < 1; i++)
+    uint2 tileIndex = uint2(floor(input.position.xy / BLOCK_SIZE));
+
+    uint startOffset = LightGrid[tileIndex].x;
+    uint lightCount = LightGrid[tileIndex].y;
+
+    for (int i = 0; i < lightCount; i++)
     {
         
         //float3 lightPositionVS = mul(LightBuffer[i].PositionWS.xyz, (float3x3) input.mat);
         //float3 DirectionVS = mul(LightBuffer[i].DirectionWS.xyz, (float3x3) input.mat);
 
-        lightDir = LightBuffer[i].PositionVS.xyz - positionVS;
+        uint lightIndex = LightIndexList[startOffset + i];
+        Light light = LightBuffer[lightIndex];
+
+        lightDir = light.PositionVS.xyz - positionVS;
 
         LightingResult result = (LightingResult) 0;
 
-        if (!LightBuffer[i].Enabled)
-            continue;
+        //if (!light.Enabled)
+        //    continue;
 
-        if (LightBuffer[i].Type != DIRECTIONAL_LIGHT && length(lightDir) > LightBuffer[i].Range)
-            continue;
+        //if (light.Type != DIRECTIONAL_LIGHT && length(lightDir) > LightBuffer[i].Range)
+        //    continue;
 
-        switch (LightBuffer[i].Type)
+        switch (light.Type)
         {
                 case POINT_LIGHT:
                 {
-                    result = DoPointLight(LightBuffer[i], viewDirVS, lightDir, normalVS);
+                    result = DoPointLight(light, viewDirVS, lightDir, normalVS);
                 }
                 break;
                 case SPOT_LIGHT:
                 {
-                    result = DoSpotLight(LightBuffer[i], viewDirVS, lightDir, normalVS, LightBuffer[i].DirectionVS.xyz);
+                    result = DoSpotLight(light, viewDirVS, lightDir, normalVS, light.DirectionVS.xyz);
                 }
                 break;
                 case DIRECTIONAL_LIGHT:
                 {
-                    result = DoDirectionalLight(LightBuffer[i], viewDirVS, lightDir, normalVS, LightBuffer[i].DirectionVS.xyz);
+                    result = DoDirectionalLight(light, viewDirVS, lightDir, normalVS, light.DirectionVS.xyz);
                 }
                 break;
         }

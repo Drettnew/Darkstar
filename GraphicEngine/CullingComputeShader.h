@@ -9,25 +9,32 @@ using namespace std;
 
 class CullingComputeShader
 {
-	struct DispatchParams
+	// Constant buffer to store the number of groups executed in a dispatch.
+	__declspec(align(16)) struct DispatchParams
 	{
 		XMUINT3 numThreadGroups;
+		uint32_t padding0;        // Pad to 16 bytes.
 		XMUINT3 numThreads;
-		XMUINT2 padding;
+		uint32_t padding1;        // Pad to 16 bytes.
 	};
 
-	struct ScreenToViewParams
+	__declspec(align(16)) struct ScreenToViewParams
 	{
 		XMMATRIX InverseProjectionMatrix;
+		XMMATRIX ViewMatrix;
 		XMFLOAT2 ScreenDimensions;
+		XMFLOAT2 Padding;
 	};
 public:
 	CullingComputeShader();
 	~CullingComputeShader();
 
 	bool Initialize(ID3D11Device* device, HWND hwnd);
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX projectionMatrix);
+	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX projectionMatrix, XMMATRIX viewMatrix);
 	void Shutdown();
+
+	void Bind(ID3D11DeviceContext* deviceContext, UINT startSlot);
+	void Unbind(ID3D11DeviceContext* deviceContext, UINT startSlot);
 
 	void Dispatch(ID3D11DeviceContext* deviceContext, ID3D11Device * device, int x, int y, int z);
 
@@ -52,6 +59,10 @@ private:
 
 	ID3D11UnorderedAccessView* m_LightGridUAV;
 	ID3D11ShaderResourceView* m_LightGridRV;
+
+	ID3D11Texture2D* m_debugTexture;
+	ID3D11UnorderedAccessView* m_debugTextureUAV;
+	ID3D11ShaderResourceView* m_debugTextureRV;
 
 	void CreateStructuredBuffer(ID3D11Device * device);
 	void DestroyStructuredBuffer();

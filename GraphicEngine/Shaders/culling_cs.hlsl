@@ -5,7 +5,7 @@
 
 #ifndef NUM_LIGHTS
 #pragma message( "NUM_LIGHTS undefined. Default to 8.")
-#define NUM_LIGHTS 1 // should be defined by the application.
+#define NUM_LIGHTS 2 // should be defined by the application.
 #endif
 
 #define POINT_LIGHT 0
@@ -101,29 +101,33 @@ struct ComputeShaderInput
     uint groupIndex : SV_GroupIndex; // Flattened local index of the thread within a thread group.
 };
 
+// Global variables
 cbuffer DispatchParams : register(b0)
 {
     // Number of groups dispatched. (This parameter is not available as an HLSL system value!)
     uint3 numThreadGroups;
+    // uint padding // implicit padding to 16 bytes.
     // Total number of threads dispatched. (Also not available as an HLSL system value!)
     // Note: This value may be less than the actual number of threads executed 
     // if the screen size is not evenly divisible by the block size.
     uint3 numThreads;
-    uint2 padding; // implicit padding to 16 bytes.
+    // uint padding // implicit padding to 16 bytes.
 }
 
 // Parameters required to convert screen space coordinates to view space params.
 cbuffer ScreenToViewParams : register(b1)
 {
     float4x4 InverseProjection;
+    float4x4 ViewMatrix;
     float2 ScreenDimensions;
+    float2 Padding;
 }
 
 // Convert clip space coordinates to view space
 float4 ClipToView(float4 clip)
 {
     // View space position.
-    float4 view = mul(InverseProjection, clip);
+    float4 view = mul(clip, InverseProjection);
     // Perspecitive projection.
     view = view / view.w;
 
@@ -142,9 +146,21 @@ float4 ScreenToView(float4 screen)
     return ClipToView(clip);
 }
 
+Plane ComputePlane(float3 p1, float3 p2)
+{
+    Plane plane;
+ 
+    plane.N = normalize(cross(p1, p2));
+ 
+    // Compute the distance to the origin using p0.
+    plane.d = 0;
+    return plane;
+}
+
 bool SphereInsidePlane(Sphere sphere, Plane plane)
 {
-    return dot(plane.N, sphere.c) - plane.d < -sphere.r;
+    float dotProduct = dot(plane.N, sphere.c) - plane.d;
+    return dotProduct < sphere.r;
 }
 
 // Check to see if a point is fully behind (inside the negative halfspace of) a plane.
@@ -176,7 +192,7 @@ bool SphereInsideFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar
     // First check depth
     // Note: Here, the view vector points in the -Z axis so the 
     // far depth value will be approaching -infinity.
-    if (sphere.c.z - sphere.r > zNear || sphere.c.z + sphere.r < zFar)
+    if (sphere.c.z + sphere.r < zNear || sphere.c.z - sphere.r > zFar)
     {
         result = false;
     }
@@ -184,7 +200,8 @@ bool SphereInsideFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar
     // Then check frustum planes
     for (int i = 0; i < 4 && result; i++)
     {
-        if (SphereInsidePlane(sphere, frustum.planes[i]))
+        bool IsInside = SphereInsidePlane(sphere, frustum.planes[i]);
+        if (!IsInside)
         {
             result = false;
         }
@@ -207,7 +224,7 @@ bool ConeInsideFrustum(Cone cone, Frustum frustum, float zNear, float zFar)
     }
 
     // Then check frustum planes
-    for (int i = 0; i < 4 && result; i++)
+    for (int i = 0; i < 4; i++)
     {
         if (ConeInsidePlane(cone, frustum.planes[i]))
         {
@@ -232,6 +249,8 @@ RWStructuredBuffer<uint> LightIndexList : register(u1);
 
 RWTexture2D<uint2> LightGrid : register(u2);
 
+RWTexture2D<float4> DebugTexture : register(u3);
+
 // Group shared variables.
 groupshared uint uMinDepth;
 groupshared uint uMaxDepth;
@@ -251,6 +270,21 @@ void AppendLight(uint lightIndex)
     {
         LightList[index] = lightIndex;
     }
+}
+
+float GetSignedDistanceFromPlane(float3 p, float3 eqn)
+{
+    float result = dot(eqn, p);
+
+    return result;
+}
+
+float3 CreatePlaneEquation(float4 p1, float4 p2)
+{
+    float3 b = p1.xyz;
+    float3 c = p2.xyz;
+
+    return normalize(cross(b, c));
 }
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
@@ -289,6 +323,40 @@ void CullingComputeShader(ComputeShaderInput input)
     // (used for testing lights within the bounds of opaque geometry).
     Plane minPlane = { float3(0, 0, -1), -minDepthVS };
 
+    //Frustum frustum;
+
+    // Compute 4 points on the far clipping plane to use as the 
+    // frustum vertices.
+    float4 screenSpace[4];
+    // Top left point
+    screenSpace[0] = float4(input.groupID.xy * BLOCK_SIZE, 1.0f, 1.0f);
+    // Top right point
+    screenSpace[1] = float4(float2(input.groupID.x + 1, input.groupID.y) * BLOCK_SIZE, 1.0f, 1.0f);
+    // Bottom right point
+    screenSpace[2] = float4(float2(input.groupID.x + 1, input.groupID.y + 1) * BLOCK_SIZE, 1.0f, 1.0f);
+    // Bottom left point
+    screenSpace[3] = float4(float2(input.groupID.x, input.groupID.y + 1) * BLOCK_SIZE, 1.0f, 1.0f);
+
+    uint pxm = BLOCK_SIZE * input.groupID.x;
+    uint pym = BLOCK_SIZE * input.groupID.y;
+    uint pxp = BLOCK_SIZE * (input.groupID.x + 1);
+    uint pyp = BLOCK_SIZE * (input.groupID.y + 1);
+
+    float4 p[4];
+    float3 frustum[4];
+
+    p[0] = ClipToView(float4((float) pxm / (float) ScreenDimensions.x * 2.0f - 1.0f, ((float) ScreenDimensions.y - (float) pym) / (float) ScreenDimensions.y * 2.0f - 1.0f, 1.0f, 1.0f));
+    p[1] = ClipToView(float4((float) pxp / (float) ScreenDimensions.x * 2.0f - 1.0f, ((float) ScreenDimensions.y - (float) pym) / (float) ScreenDimensions.y * 2.0f - 1.0f, 1.0f, 1.0f));
+    p[2] = ClipToView(float4((float) pxp / (float) ScreenDimensions.x * 2.0f - 1.0f, ((float) ScreenDimensions.y - (float) pyp) / (float) ScreenDimensions.y * 2.0f - 1.0f, 1.0f, 1.0f));
+    p[3] = ClipToView(float4((float) pxm / (float) ScreenDimensions.x * 2.0f - 1.0f, ((float) ScreenDimensions.y - (float) pyp) / (float) ScreenDimensions.y * 2.0f - 1.0f, 1.0f, 1.0f));
+
+    frustum[0] = CreatePlaneEquation(p[0], p[1]);
+    frustum[1] = CreatePlaneEquation(p[1], p[2]);
+    frustum[2] = CreatePlaneEquation(p[2], p[3]);
+    frustum[3] = CreatePlaneEquation(p[3], p[0]);
+    
+    GroupMemoryBarrierWithGroupSync();
+
     // Cull lights
     // Each thread in a group will cull 1 light until all lights have been culled.
     for (uint i = input.groupIndex; i < NUM_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
@@ -302,13 +370,37 @@ void CullingComputeShader(ComputeShaderInput input)
                 case POINT_LIGHT:
             {
                         Sphere sphere = { light.PositionVS.xyz, light.Range };
-                        if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
+
+                        float r = light.Range;
+                        float3 center = mul(float4(light.PositionWS), ViewMatrix).xyz;
+
+                        //if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
+                        //{
+                        //    if (!SphereInsidePlane(sphere, minPlane))
+                        //    {
+                        //// Add light to light list for opaque geometry.
+                        //        AppendLight(i);
+                        //    }
+                        //}
+
+                        bool frustum0 = GetSignedDistanceFromPlane(center, frustum[0]) < r;
+                        bool frustum1 = GetSignedDistanceFromPlane(center, frustum[1]) < r;
+                        bool frustum2 = GetSignedDistanceFromPlane(center, frustum[2]) < r;
+                        bool frustum3 = GetSignedDistanceFromPlane(center, frustum[3]) < r;
+                        bool min = (-center.z + minDepthVS < r);
+                        bool max = (center.z - maxDepthVS < r);
+                        
+                        if (frustum0 &&
+                            frustum1 &&
+                            frustum2 &&
+                            frustum3 &&
+                            min &&
+                            max)
                         {
-                            if (!SphereInsidePlane(sphere, minPlane))
-                            {
-                        // Add light to light list for opaque geometry.
-                                AppendLight(i);
-                            }
+        
+                            // Add light to light list for opaque geometry.
+                            AppendLight(i);
+                       
                         }
                     }
                     break;
@@ -358,23 +450,23 @@ void CullingComputeShader(ComputeShaderInput input)
         LightIndexList[LightIndexStartOffset + i] = LightList[i];
     }
 
-    //// Update the debug texture output.
-    //if (input.groupThreadID.x == 0 || input.groupThreadID.y == 0)
-    //{
-    //    DebugTexture[texCoord] = float4(0, 0, 0, 0.9f);
-    //}
-    //else if (input.groupThreadID.x == 1 || input.groupThreadID.y == 1)
-    //{
-    //    DebugTexture[texCoord] = float4(1, 1, 1, 0.5f);
-    //}
-    //else if (o_LightCount > 0)
-    //{
-    //    float normalizedLightCount = o_LightCount / 50.0f;
-    //    float4 lightCountHeatMapColor = LightCountHeatMap.SampleLevel(LinearClampSampler, float2(normalizedLightCount, 0), 0);
-    //    DebugTexture[texCoord] = lightCountHeatMapColor;
-    //}
-    //else
-    //{
-    //    DebugTexture[texCoord] = float4(0, 0, 0, 1);
-    //}
+    // Update the debug texture output.
+    if (input.groupThreadID.x == 0 || input.groupThreadID.y == 0)
+    {
+        DebugTexture[texCoord] = float4(0, 0, 0, 0.9f);
+    }
+    else if (input.groupThreadID.x == 1 || input.groupThreadID.y == 1)
+    {
+        DebugTexture[texCoord] = float4(1, 1, 1, 0.5f);
+    }
+    else if (LightCount > 0)
+    {
+        float normalizedLightCount = LightCount / 50.0f;
+        //float4 lightCountHeatMapColor = LightCountHeatMap.SampleLevel(LinearClampSampler, float2(normalizedLightCount, 0), 0);
+        DebugTexture[texCoord] = float4(0, 1, 0, 1);
+    }
+    else
+    {
+        DebugTexture[texCoord] = float4(0, 0, 0, 1);
+    }
 }

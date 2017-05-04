@@ -65,7 +65,7 @@ bool CullingComputeShader::Initialize(ID3D11Device * device, HWND hwnd)
 	return true;
 }
 
-bool CullingComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceContext, XMMATRIX projectionMatrix)
+bool CullingComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceContext, XMMATRIX projectionMatrix, XMMATRIX viewMatrix)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -102,8 +102,20 @@ bool CullingComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceConte
 	XMMATRIX invProjMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 	invProjMatrix = XMMatrixTranspose(invProjMatrix);
 
-	dataPtr2->InverseProjectionMatrix = invProjMatrix;
+	XMFLOAT4X4 f4x4Proj, f4x4InvProj;
+	XMStoreFloat4x4(&f4x4Proj, projectionMatrix);
+	XMStoreFloat4x4(&f4x4InvProj, XMMatrixIdentity());
+	f4x4InvProj._11 = 1.0f / f4x4Proj._11;
+	f4x4InvProj._22 = 1.0f / f4x4Proj._22;
+	f4x4InvProj._33 = 0.0f;
+	f4x4InvProj._34 = 1.0f / f4x4Proj._43;
+	f4x4InvProj._43 = 1.0f;
+	f4x4InvProj._44 = -f4x4Proj._33 / f4x4Proj._43;
+	XMMATRIX mInvProj = XMLoadFloat4x4(&f4x4InvProj);
+
+	dataPtr2->InverseProjectionMatrix = invProjMatrix;// XMMatrixTranspose(mInvProj);
 	dataPtr2->ScreenDimensions = XMFLOAT2(SCREEN_WIDTH, SCREEN_HEIGHT);
+	dataPtr2->ViewMatrix = XMMatrixTranspose(viewMatrix);
 
 	//Unlock the constant buffer
 	deviceContext->Unmap(m_ScreenToViewParamBuffer, 0);
@@ -151,17 +163,37 @@ void CullingComputeShader::Shutdown()
 	}
 }
 
+void CullingComputeShader::Bind(ID3D11DeviceContext * deviceContext, UINT startSlot)
+{
+	deviceContext->PSSetShaderResources(startSlot, 1, m_LightIndexList.GetResourceView());
+	deviceContext->PSSetShaderResources(3, 1, &m_LightGridRV);
+}
+
+void CullingComputeShader::Unbind(ID3D11DeviceContext * deviceContext, UINT startSlot)
+{
+	ID3D11ShaderResourceView* resource = { nullptr };
+	deviceContext->PSSetShaderResources(startSlot, 1, &resource);
+	deviceContext->PSSetShaderResources(3, 1, &resource);
+}
+
 void CullingComputeShader::Dispatch(ID3D11DeviceContext * deviceContext, ID3D11Device * device, int x, int y, int z)
 {
 	m_LightIndexCounter.Copy(deviceContext, &m_indexCounterInitialBuffer);
 
 	deviceContext->CSSetShader(m_computeShader, NULL, 0);
+	ID3D11UnorderedAccessView* resource = { nullptr };
 
 	deviceContext->CSSetUnorderedAccessViews(0, 1, m_LightIndexCounter.GetUnorderedAccessView(), 0);
 	deviceContext->CSSetUnorderedAccessViews(1, 1, m_LightIndexList.GetUnorderedAccessView(), 0);
 	deviceContext->CSSetUnorderedAccessViews(2, 1, &m_LightGridUAV, 0);
+	deviceContext->CSSetUnorderedAccessViews(3, 1, &m_debugTextureUAV, 0);
 
 	deviceContext->Dispatch(m_dispatchParameters.numThreadGroups.x, m_dispatchParameters.numThreadGroups.y, m_dispatchParameters.numThreadGroups.z);
+
+	deviceContext->CSSetUnorderedAccessViews(0, 1, &resource, 0);
+	deviceContext->CSSetUnorderedAccessViews(1, 1, &resource, 0);
+	deviceContext->CSSetUnorderedAccessViews(2, 1, &resource, 0);
+	deviceContext->CSSetUnorderedAccessViews(3, 1, &resource, 0);
 }
 
 void CullingComputeShader::CreateStructuredBuffer(ID3D11Device * device)
@@ -178,6 +210,7 @@ void CullingComputeShader::CreateStructuredBuffer(ID3D11Device * device)
 
 	m_LightIndexList.Initialize(m_dispatchParameters.numThreadGroups.x * m_dispatchParameters.numThreadGroups.y * m_dispatchParameters.numThreadGroups.z * AVERAGE_OVERLAPPING_LIGHTS_PER_TILE, sizeof(uint32_t), false, true, NULL, device);
 	m_LightIndexList.InitializeAccessView(device);
+	m_LightIndexList.InitializeResourceView(device);
 
 	InitializeTexture(device);
 }
@@ -204,6 +237,24 @@ void CullingComputeShader::DestroyStructuredBuffer()
 		m_LightGridUAV->Release();
 		m_LightGridUAV = 0;
 	}
+
+	if (m_debugTexture)
+	{
+		m_debugTexture->Release();
+		m_debugTexture = 0;
+	}
+
+	if (m_debugTextureRV)
+	{
+		m_debugTextureRV->Release();
+		m_debugTextureRV = 0;
+	}
+
+	if (m_debugTextureUAV)
+	{
+		m_debugTextureUAV->Release();
+		m_debugTextureUAV = 0;
+	}
 }
 
 bool CullingComputeShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * filename)
@@ -215,7 +266,7 @@ bool CullingComputeShader::InitializeShader(ID3D11Device * device, HWND hwnd, WC
 	errorMessage = 0;
 	computeShader = 0;
 
-	result = D3DCompileFromFile(filename, NULL, NULL, "CullingComputeShader", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(filename, NULL, NULL, "CullingComputeShader", "cs_5_0", D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0,
 		&computeShader, &errorMessage);
 
 	if (FAILED(result))
@@ -292,6 +343,47 @@ bool CullingComputeShader::InitializeTexture(ID3D11Device * device)
 	unorderedAccessViewDesc.Texture2D.MipSlice = 0;
 
 	result = device->CreateUnorderedAccessView(m_LightGrid, &unorderedAccessViewDesc, &m_LightGridUAV);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	//DEBUG TEXTURE----------------------------------------------------------
+
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+	textureDesc.Width = SCREEN_WIDTH;
+	textureDesc.Height = SCREEN_HEIGHT;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.MipLevels = 1;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc = sampleDesc;
+
+	result = device->CreateTexture2D(&textureDesc, nullptr, &m_debugTexture);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	resourceViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	resourceViewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+	resourceViewDesc.Texture2D.MipLevels = 1;
+	resourceViewDesc.Texture2D.MostDetailedMip = 0;
+
+	result = device->CreateShaderResourceView(m_debugTexture, &resourceViewDesc, &m_debugTextureRV);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	unorderedAccessViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+	unorderedAccessViewDesc.Texture2D.MipSlice = 0;
+
+	result = device->CreateUnorderedAccessView(m_debugTexture, &unorderedAccessViewDesc, &m_debugTextureUAV);
 	if (FAILED(result))
 	{
 		return false;

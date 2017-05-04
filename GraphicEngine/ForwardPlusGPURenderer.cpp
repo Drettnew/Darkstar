@@ -17,7 +17,7 @@ bool ForwardPlusGPU::Initialize(ID3D11Device * device, ID3D11DeviceContext* devi
 	bool result;
 
 	// Create the light shader object.
-	m_Shader = new LightShader;
+	m_Shader = new ForwardPlusLightShader;
 	if (!m_Shader)
 	{
 		return false;
@@ -77,52 +77,23 @@ bool ForwardPlusGPU::Initialize(ID3D11Device * device, ID3D11DeviceContext* devi
 	light.m_Color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 	light.m_Enabled = 1;
 	light.m_PositionWS = XMFLOAT4(0.0f, 3.0f, 0.0f, 1.0f);
-	light.m_Intensity = 10;
-	light.m_Range = 4;
+	light.m_Intensity = 1;
+	light.m_Range = 10;
+	light.m_Type = LightType::Point;
+
+	m_lightList.AddLight(light);
+
+	light.m_Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	light.m_Enabled = 1;
+	light.m_PositionWS = XMFLOAT4(-5.0f, 3.0f, 0.0f, 1.0f);
+	light.m_Intensity = 1;
+	light.m_Range = 10;
 	light.m_Type = LightType::Point;
 
 	m_lightList.AddLight(light);
 
 	m_StructuredLightBuffer.Initialize(NUM_LIGHTS, sizeof(Light), true, false, NULL, device);
 	m_StructuredLightBuffer.InitializeResourceView(device);
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	Light* dataPtr;
-
-	//Lock the light constant buffer so it can be written to
-	result = deviceContext->Map(m_StructuredLightBuffer.GetBuffer(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	//Get a pointer to the data in the constant buffer
-	dataPtr = (Light*)mappedResource.pData;
-
-	std::vector<Light> lights = m_lightList.GetLightList();
-
-	for (int i = 0; i < lights.size(); i++)
-	{
-		Light light = lights[i];
-
-		//Copy the lighting variables into the constant buffer
-		dataPtr[i].m_Color = light.m_Color;
-
-		dataPtr[i].m_DirectionVS = light.m_DirectionVS;
-		dataPtr[i].m_DirectionWS = light.m_DirectionWS;
-
-		dataPtr[i].m_PositionVS = light.m_PositionVS;
-		dataPtr[i].m_PositionWS = light.m_PositionWS;
-
-		dataPtr[i].m_Range = light.m_Range;
-		dataPtr[i].m_Intensity = light.m_Intensity;
-		dataPtr[i].m_Enabled = light.m_Enabled;
-		dataPtr[i].m_SpotlightAngle = light.m_SpotlightAngle;
-		dataPtr[i].m_Type = light.m_Type;
-	}
-
-	//Unlock the constant buffer
-	deviceContext->Unmap(m_StructuredLightBuffer.GetBuffer(), 0);
 
 	return true;
 }
@@ -165,6 +136,7 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 {
 	XMMATRIX viewMatrix, projectionMatrix;
 	bool result;
+	HRESULT hr;
 
 	camera->GetViewMatrix(viewMatrix);
 	directX->GetProjectionMatrix(projectionMatrix);
@@ -176,30 +148,83 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 
 	directX->Reset();
 
-	//Render the model using the light shader
-	result = m_Shader->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix,
-									model->GetTexture(), camera->GetPosition(), &m_lightList);
-	if (!result)
-	{
-		return false;
-	}
 	if (!m_HasGeneratedFrustum)
 	{
 		m_FrustumCS->SetShaderParameters(directX->GetDeviceContext(), projectionMatrix);
 		m_FrustumCS->Dispatch(directX->GetDeviceContext(), directX->GetDevice(), 16, 16, 1);
-
 		m_HasGeneratedFrustum = true;
 	}
 
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	Light* dataPtr;
+
+	//Lock the light constant buffer so it can be written to
+	hr = directX->GetDeviceContext()->Map(m_StructuredLightBuffer.GetBuffer(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	//Get a pointer to the data in the constant buffer
+	dataPtr = (Light*)mappedResource.pData;
+
+	std::vector<Light> lights = m_lightList.GetLightList();
+	XMVECTOR xmvector;
+	XMMATRIX transposedViewMatrix;
+
+	transposedViewMatrix = viewMatrix;
+	//transposedViewMatrix = XMMatrixTranspose(viewMatrix);
+
+	for (int i = 0; i < lights.size(); i++)
+	{
+		Light light = lights[i];
+
+		//Copy the lighting variables into the constant buffer
+		dataPtr[i].m_Color = light.m_Color;
+
+		xmvector = XMLoadFloat4(&light.m_DirectionWS);
+		xmvector = XMVector3Transform(xmvector, transposedViewMatrix);
+		XMStoreFloat4(&dataPtr[i].m_DirectionVS, xmvector);
+
+		dataPtr[i].m_DirectionWS = light.m_DirectionWS;
+
+		xmvector = XMLoadFloat4(&light.m_PositionWS);
+		xmvector = XMVector3Transform(xmvector, transposedViewMatrix);
+		XMStoreFloat4(&dataPtr[i].m_PositionVS, xmvector);
+
+		dataPtr[i].m_PositionWS = light.m_PositionWS;
+
+		dataPtr[i].m_Range = light.m_Range;
+		dataPtr[i].m_Intensity = light.m_Intensity;
+		dataPtr[i].m_Enabled = light.m_Enabled;
+		dataPtr[i].m_SpotlightAngle = light.m_SpotlightAngle;
+		dataPtr[i].m_Type = light.m_Type;
+	}
+
+	//Unlock the constant buffer
+	directX->GetDeviceContext()->Unmap(m_StructuredLightBuffer.GetBuffer(), 0);
+
 	m_depthPrePass->Bind(directX->GetDeviceContext(), 0);
 	m_FrustumCS->Bind(directX->GetDeviceContext(), 1);
-	m_CullingCS->SetShaderParameters(directX->GetDeviceContext(), projectionMatrix);
+	m_CullingCS->SetShaderParameters(directX->GetDeviceContext(), projectionMatrix, viewMatrix);
 
 	directX->GetDeviceContext()->CSSetShaderResources(2, 1, m_StructuredLightBuffer.GetResourceView());
 
 	m_CullingCS->Dispatch(directX->GetDeviceContext(), directX->GetDevice(), 16, 16, 1);
 	m_depthPrePass->Unbind(directX->GetDeviceContext(), 0);
 	m_FrustumCS->Unbind(directX->GetDeviceContext(), 1);
+
+
+	m_CullingCS->Bind(directX->GetDeviceContext(), 2);
+	//Render the model using the light shader
+	result = m_Shader->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix,
+		model->GetTexture(), camera->GetPosition(), &m_lightList);
+	if (!result)
+	{
+		return false;
+	}
+
+	m_CullingCS->Unbind(directX->GetDeviceContext(), 2);
 
 	return true;
 }

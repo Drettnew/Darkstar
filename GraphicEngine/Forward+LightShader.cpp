@@ -1,6 +1,6 @@
-#include "LightShader.h"
+#include "Forward+LightShader.h"
 
-bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsFilename, WCHAR * psFilename)
+bool ForwardPlusLightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsFilename, WCHAR * psFilename)
 {
 	HRESULT result;
 	ID3D10Blob* errorMessage;
@@ -21,7 +21,7 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 	ZeroMemory(&data, sizeof(data));
 	data.pSysMem = templight;
 
-	m_structuredBuffer.Initialize(1, sizeof(Light), true, false, &data, device);
+	m_structuredBuffer.Initialize(2, sizeof(Light), true, false, &data, device);
 	m_structuredBuffer.InitializeResourceView(device);
 
 	delete templight;
@@ -32,7 +32,7 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 	pixelShaderBuffer = 0;
 
 	// Compile the vertex shader code.
-	result = D3DCompileFromFile(vsFilename, NULL, NULL, "LightVertexShader", "vs_5_0", D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_DEBUG, 0,
+	result = D3DCompileFromFile(vsFilename, NULL, NULL, "ForwardPlusLightVertexShader", "vs_5_0", D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0,
 		&vertexShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
@@ -51,7 +51,7 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 	}
 
 	// Compile the pixel shader code.
-	result = D3DCompileFromFile(psFilename, NULL, NULL, "LightPixelShader", "ps_5_0", D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_DEBUG, 0,
+	result = D3DCompileFromFile(psFilename, NULL, NULL, "ForwardPlusLightPixelShader", "ps_5_0", D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0,
 		&pixelShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
@@ -195,7 +195,7 @@ bool LightShader::InitializeShader(ID3D11Device * device, HWND hwnd, WCHAR * vsF
 	return true;
 }
 
-void LightShader::ShutdownShader()
+void ForwardPlusLightShader::ShutdownShader()
 {
 	m_structuredBuffer.Shutdown();
 
@@ -248,7 +248,7 @@ void LightShader::ShutdownShader()
 	}
 }
 
-void LightShader::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, WCHAR * shaderFilename)
+void ForwardPlusLightShader::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, WCHAR * shaderFilename)
 {
 	char* compileErrors;
 	unsigned long bufferSize, i;
@@ -281,7 +281,7 @@ void LightShader::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd,
 	MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
-bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+bool ForwardPlusLightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 										XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture,  XMFLOAT3 cameraPosition, LightList* lightList)
 {
 	HRESULT result;
@@ -405,7 +405,7 @@ bool LightShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, int in
 	return true;
 }
 
-void LightShader::RenderShader(ID3D11DeviceContext * deviceContext, int indexCount)
+void ForwardPlusLightShader::RenderShader(ID3D11DeviceContext * deviceContext, int indexCount)
 {
 	//Set the vertex input layout
 	deviceContext->IASetInputLayout(m_layout);
@@ -421,7 +421,7 @@ void LightShader::RenderShader(ID3D11DeviceContext * deviceContext, int indexCou
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 }
 
-LightShader::LightShader()
+ForwardPlusLightShader::ForwardPlusLightShader()
 {
 	m_vertexShader = 0;
 	m_pixelShader = 0;
@@ -432,20 +432,20 @@ LightShader::LightShader()
 	m_cameraBuffer = 0;
 }
 
-LightShader::LightShader(const LightShader & other)
+ForwardPlusLightShader::ForwardPlusLightShader(const ForwardPlusLightShader & other)
 {
 }
 
-LightShader::~LightShader()
+ForwardPlusLightShader::~ForwardPlusLightShader()
 {
 }
 
-bool LightShader::Initialize(ID3D11Device * device, HWND hwnd)
+bool ForwardPlusLightShader::Initialize(ID3D11Device * device, HWND hwnd)
 {
 	bool result;
 
 	//Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../GraphicEngine/Shaders/light_vs.hlsl", L"../GraphicEngine/Shaders/light_ps.hlsl");
+	result = InitializeShader(device, hwnd, L"../GraphicEngine/Shaders/ForwardPlusLight_vs.hlsl", L"../GraphicEngine/Shaders/ForwardPlusLight_ps.hlsl");
 	if (!result)
 	{
 		return false;
@@ -454,12 +454,12 @@ bool LightShader::Initialize(ID3D11Device * device, HWND hwnd)
 	return true;
 }
 
-void LightShader::Shutdown()
+void ForwardPlusLightShader::Shutdown()
 {
 	ShutdownShader();
 }
 
-bool LightShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+bool ForwardPlusLightShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
 	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition, LightList* lightList)
 {
 	bool result;

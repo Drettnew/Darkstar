@@ -96,10 +96,22 @@ bool FrustumComputeShader::SetShaderParameters(ID3D11DeviceContext * deviceConte
 
 	dataPtr2 = (ScreenToViewParams*)mappedResource.pData;
 
+	XMFLOAT4X4 f4x4Proj, f4x4InvProj;
+	XMStoreFloat4x4(&f4x4Proj, projectionMatrix);
+	XMStoreFloat4x4(&f4x4InvProj, XMMatrixIdentity());
+	f4x4InvProj._11 = 1.0f / f4x4Proj._11;
+	f4x4InvProj._22 = 1.0f / f4x4Proj._22;
+	f4x4InvProj._33 = 0.0f;
+	f4x4InvProj._34 = 1.0f / f4x4Proj._43;
+	f4x4InvProj._43 = 1.0f;
+	f4x4InvProj._44 = -f4x4Proj._33 / f4x4Proj._43;
+	XMMATRIX mInvProj = XMLoadFloat4x4(&f4x4InvProj);
+
+
 	XMMATRIX invProjMatrix = XMMatrixInverse(nullptr, projectionMatrix);
 	invProjMatrix = XMMatrixTranspose(invProjMatrix);
 
-	dataPtr2->InverseProjectionMatrix = invProjMatrix;
+	dataPtr2->InverseProjectionMatrix = XMMatrixTranspose(mInvProj);
 	dataPtr2->ScreenDimensions = XMFLOAT2(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	//Unlock the constant buffer
@@ -148,7 +160,7 @@ bool FrustumComputeShader::InitializeShader(ID3D11Device * device, HWND hwnd, WC
 	errorMessage = 0;
 	computeShader = 0;
 
-	result = D3DCompileFromFile(filename, NULL, NULL, "FrustumComputeShader", "cs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(filename, NULL, NULL, "FrustumComputeShader", "cs_5_0", D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0,
 		&computeShader, &errorMessage);
 
 	if (FAILED(result))
