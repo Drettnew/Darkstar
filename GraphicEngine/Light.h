@@ -66,6 +66,7 @@ public:
 	~LightList();
 
 	void AddLight(Light light);
+	void UpdateLights(XMMATRIX viewMatrix);
 	std::vector<Light> GetLightList();
 
 	void Random(float maxX, float maxY, int numLights);

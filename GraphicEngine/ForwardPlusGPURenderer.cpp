@@ -70,27 +70,7 @@ bool ForwardPlusGPU::Initialize(ID3D11Device * device, ID3D11DeviceContext* devi
 		return false;
 	}
 
-	//m_lightList.Random(15, 15, NUM_LIGHTS);
-
-	Light light;
-
-	light.m_Color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	light.m_Enabled = 1;
-	light.m_PositionWS = XMFLOAT4(0.0f, 3.0f, 0.0f, 1.0f);
-	light.m_Intensity = 1;
-	light.m_Range = 10;
-	light.m_Type = LightType::Point;
-
-	m_lightList.AddLight(light);
-
-	light.m_Color = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	light.m_Enabled = 1;
-	light.m_PositionWS = XMFLOAT4(-5.0f, 3.0f, 0.0f, 1.0f);
-	light.m_Intensity = 1;
-	light.m_Range = 10;
-	light.m_Type = LightType::Point;
-
-	m_lightList.AddLight(light);
+	m_lightList.Random(50, 50, NUM_LIGHTS);
 
 	m_StructuredLightBuffer.Initialize(NUM_LIGHTS, sizeof(Light), true, false, NULL, device);
 	m_StructuredLightBuffer.InitializeResourceView(device);
@@ -141,6 +121,8 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 	camera->GetViewMatrix(viewMatrix);
 	directX->GetProjectionMatrix(projectionMatrix);
 
+	m_lightList.UpdateLights(viewMatrix);
+
 	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
 	model->Render(directX->GetDeviceContext());
 
@@ -182,17 +164,11 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 		//Copy the lighting variables into the constant buffer
 		dataPtr[i].m_Color = light.m_Color;
 
-		xmvector = XMLoadFloat4(&light.m_DirectionWS);
-		xmvector = XMVector3Transform(xmvector, transposedViewMatrix);
-		XMStoreFloat4(&dataPtr[i].m_DirectionVS, xmvector);
-
 		dataPtr[i].m_DirectionWS = light.m_DirectionWS;
-
-		xmvector = XMLoadFloat4(&light.m_PositionWS);
-		xmvector = XMVector3Transform(xmvector, transposedViewMatrix);
-		XMStoreFloat4(&dataPtr[i].m_PositionVS, xmvector);
+		dataPtr[i].m_DirectionVS = light.m_DirectionVS;
 
 		dataPtr[i].m_PositionWS = light.m_PositionWS;
+		dataPtr[i].m_PositionVS = light.m_PositionVS;
 
 		dataPtr[i].m_Range = light.m_Range;
 		dataPtr[i].m_Intensity = light.m_Intensity;
@@ -216,6 +192,7 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model)
 
 
 	m_CullingCS->Bind(directX->GetDeviceContext(), 2);
+	directX->GetDeviceContext()->PSSetShaderResources(1, 1, m_StructuredLightBuffer.GetResourceView());
 	//Render the model using the light shader
 	result = m_Shader->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix,
 		model->GetTexture(), camera->GetPosition(), &m_lightList);

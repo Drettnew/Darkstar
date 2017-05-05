@@ -179,6 +179,21 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 		return false;
 	}
 
+	//Create the renderer object
+	m_CpuRenderer = new ForwardPlusCPU;
+	if (!m_CpuRenderer)
+	{
+		return false;
+	}
+
+	//Initialize the renderer object
+	result = m_CpuRenderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
+		return false;
+	}
+
 	return true;
 }
 
@@ -290,6 +305,14 @@ void Graphics::Shutdown()
 		m_Renderer = 0;
 	}
 
+	//Remove renderer
+	if (m_CpuRenderer)
+	{
+		m_CpuRenderer->Shutdown();
+		delete m_CpuRenderer;
+		m_CpuRenderer = 0;
+	}
+
 	if (m_model)
 	{
 		m_model->Shutdown();
@@ -323,6 +346,8 @@ bool Graphics::Render(float rotation)
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
 	m_Renderer->Render(m_Direct3D, m_Camera, m_model);
+
+	m_CpuRenderer->Render(m_Direct3D, m_Camera, m_model);
 
 	////Contstruct the frustum
 	//m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix);

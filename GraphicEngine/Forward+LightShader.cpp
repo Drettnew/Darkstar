@@ -296,56 +296,6 @@ bool ForwardPlusLightShader::SetShaderParameters(ID3D11DeviceContext* deviceCont
 	projectionMatrixCopy = projectionMatrix;
 	worldMatrixCopy = worldMatrix;
 
-	//Lock the light constant buffer so it can be written to
-	result = deviceContext->Map(m_structuredBuffer.GetBuffer(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-		return false;
-	}
-
-	//Get a pointer to the data in the constant buffer
-	dataPtr2 = (Light*)mappedResource.pData;
-
-	//viewMatrixCopy = XMMatrixTranspose(viewMatrixCopy);	
-
-	std::vector<Light> lights = lightList->GetLightList();
-
-	XMVECTOR xmvector;
-
-	for (int i = 0; i < lights.size(); i++)
-	{
-		Light light = lights[i];
-
-		//Copy the lighting variables into the constant buffer
-		dataPtr2[i].m_Color = light.m_Color;
-
-		xmvector = XMLoadFloat4(&light.m_DirectionWS);
-		xmvector = XMVector3Transform(xmvector, viewMatrixCopy);
-		XMStoreFloat4(&dataPtr2[i].m_DirectionVS, xmvector);
-
-		//dataPtr2[i].m_DirectionVS = light.m_DirectionVS;
-		dataPtr2[i].m_DirectionWS = light.m_DirectionWS;
-
-		xmvector = XMLoadFloat4(&light.m_PositionWS);
-		xmvector = XMVector3Transform(xmvector, viewMatrixCopy);
-		XMStoreFloat4(&dataPtr2[i].m_PositionVS, xmvector);
-
-		//dataPtr2[i].m_PositionVS = light.m_PositionVS;
-		dataPtr2[i].m_PositionWS = light.m_PositionWS;
-
-		dataPtr2[i].m_Range = light.m_Range;
-		dataPtr2[i].m_Intensity = light.m_Intensity;
-		dataPtr2[i].m_Enabled = light.m_Enabled;
-		dataPtr2[i].m_SpotlightAngle = light.m_SpotlightAngle;
-		dataPtr2[i].m_Type = light.m_Type;
-	}
-
-	//Unlock the constant buffer
-	deviceContext->Unmap(m_structuredBuffer.GetBuffer(), 0);
-
-	//TEMP LIGHT STRUCTURED BUFFER TEST
-	deviceContext->PSSetShaderResources(1, 1, m_structuredBuffer.GetResourceView());
-
 	// Transpose the matrices to prepare them for the shader.
 	worldMatrixCopy = XMMatrixTranspose(worldMatrixCopy);
 	//viewMatrix = XMMatrixTranspose(viewMatrix);

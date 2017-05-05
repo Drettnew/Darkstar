@@ -168,6 +168,7 @@
     <ClInclude Include="Font.h" />
     <ClInclude Include="FontShader.h" />
     <ClInclude Include="Forward+LightShader.h" />
+    <ClInclude Include="ForwardPlusCPURenderer.h" />
     <ClInclude Include="ForwardPlusGPURenderer.h" />
     <ClInclude Include="ForwardRenderer.h" />
     <ClInclude Include="Frustum.h" />
@@ -199,6 +200,7 @@
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FontShader.cpp" />
     <ClCompile Include="Forward+LightShader.cpp" />
+    <ClCompile Include="ForwardPlusCPURenderer.cpp" />
     <ClCompile Include="ForwardPlusGPURenderer.cpp" />
     <ClCompile Include="ForwardRenderer.cpp" />
     <ClCompile Include="Frustum.cpp" />

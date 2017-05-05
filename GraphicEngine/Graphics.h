@@ -19,6 +19,7 @@
 #include "Model.h"
 #include "ObjLoader.h"
 #include "ForwardPlusGPURenderer.h"
+#include "ForwardPlusCPURenderer.h"
 
 //Globals
 const bool FULL_SCREEN = false;
@@ -37,6 +38,7 @@ private:
 	Frustum* m_Frustum;
 
 	ForwardPlusGPU* m_Renderer;
+	ForwardPlusCPU* m_CpuRenderer;
 	//Assets* m_Assets;
 	Model* m_model;
 	ModelList modelList;

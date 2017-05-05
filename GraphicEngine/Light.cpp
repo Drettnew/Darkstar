@@ -17,6 +17,22 @@ void LightList::AddLight(Light light)
 	m_lightList.push_back(light);
 }
 
+void LightList::UpdateLights(XMMATRIX viewMatrix)
+{
+	XMVECTOR xmvector;
+
+	for (int i = 0; i < m_lightList.size(); i++)
+	{
+		xmvector = XMLoadFloat4(&m_lightList[i].m_DirectionWS);
+		xmvector = XMVector3Transform(xmvector, viewMatrix);
+		XMStoreFloat4(&m_lightList[i].m_DirectionVS, xmvector);
+
+		xmvector = XMLoadFloat4(&m_lightList[i].m_PositionWS);
+		xmvector = XMVector3Transform(xmvector, viewMatrix);
+		XMStoreFloat4(&m_lightList[i].m_PositionVS, xmvector);
+	}
+}
+
 std::vector<Light> LightList::GetLightList()
 {
 	return m_lightList;
@@ -46,7 +62,7 @@ void LightList::Random(float maxX, float maxY, int numLights)
 
 		float intensity = 2 + ((float)rand() / (RAND_MAX / 5.0f));
 
-		LightType type = (LightType)(rand() % 2);
+		LightType type = LightType::Point;//(LightType)(rand() % 2);
 
 		Light light;
 
