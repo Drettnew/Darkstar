@@ -4,13 +4,25 @@
 
 bool Darkstar::Frame()
 {
-	bool result, keyDown;
+	bool result;
 	float rotationY;
 	int mouseX, mouseY;
+	bool logData = false;
+	bool resetData = false;
 	//Update the system stats
 	m_Timer->Frame();
 	m_Fps->Frame();
 	m_Cpu->Frame();
+
+	if (m_Input->IsKeyHit(DIK_T) == true)
+	{
+		logData = true;
+	}
+
+	if (m_Input->IsKeyHit(DIK_R) == true)
+	{
+		resetData = true;
+	}
 
 	// Do the input frame processing.
 	result = m_Input->Frame();
@@ -20,7 +32,7 @@ bool Darkstar::Frame()
 	}
 
 	//Do the frame processing for the graphics object.
-	result = m_Graphics->Frame(m_Input->GetCameraInputs(), m_Fps->GetFps(), m_Cpu->GetCpuPercentage(), m_Timer->GetTime());
+	result = m_Graphics->Frame(m_Input->GetCameraInputs(), m_Input->GetGraphicInputs(), m_Fps->GetFps(), m_Cpu->GetCpuPercentage(), m_Timer->GetTime(), logData, resetData);
 	if (!result)
 	{
 		return false;
@@ -85,8 +97,8 @@ void Darkstar::InitializeWindows(int & screenWidth, int & screenHeight)
 	else
 	{
 		//If windowed then set it to 800x600 resolution
-		screenWidth = 1280;
-		screenHeight = 720;
+		screenWidth = 800;
+		screenHeight = 480;
 
 		//Place the window in the middle of the screen.
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;

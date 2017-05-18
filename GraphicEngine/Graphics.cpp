@@ -1,14 +1,19 @@
 #include "Graphics.h"
 
+//DataCollector *DataCollector::s_instance = 0;
+
 Graphics::Graphics() {
 	m_Direct3D = 0;
 	m_Camera = 0;
 	m_LightShader = 0;
 	m_Text = 0;
 	m_Frustum = 0;
-	m_ModelList = 0;
 	//m_Assets = 0;
 	m_Renderer = 0;
+	m_ForwardRender = 0;
+	m_CpuRenderer = 0;
+	m_model = 0;
+	m_sphereModel = 0;
 }
 Graphics::Graphics(const Graphics & other)
 {
@@ -72,14 +77,18 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 
 
 	// Set the initial position of the camera.
-	m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
+	m_Camera->SetPosition(0.0f, 30.0f, -50.0f);
 
 	m_model = new Model();
 
 	//TEMP____________________
 	m_model->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), "../Data/Models/floor.obj");
 
-	m_lightList.Random(10, 10, 4);
+	m_lightList.Random(50, 50, NUM_LIGHTS);
+
+	m_sphereModel = new Model();
+
+	m_sphereModel->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), "../Data/Models/sphere.obj");
 
 	//modelList.Random(m_Assets, 5, "../Data/Models/sphere.obj", 10, 10, false);
 
@@ -172,7 +181,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	//Initialize the renderer object
-	result = m_Renderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd);
+	result = m_Renderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, NUM_LIGHTS);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
@@ -187,18 +196,82 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	}
 
 	//Initialize the renderer object
-	result = m_CpuRenderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd);
+	result = m_CpuRenderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, NUM_LIGHTS);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
 		return false;
 	}
 
+	//Create the renderer object
+	m_ForwardRender = new ForwardRenderer;
+	if (!m_ForwardRender)
+	{
+		return false;
+	}
+
+	//Initialize the renderer object
+	result = m_ForwardRender->Initialize(m_Direct3D->GetDevice(), hwnd, NUM_LIGHTS);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
+		return false;
+	}
+
+	//Seed the random generator with the current time
+	srand((unsigned int)time(NULL));
+
+	for (int i = 0; i < NUM_MODEL; i++)
+	{
+		float x = (-50) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (50 + 50)));
+
+		float z = (-50) + static_cast <float> (rand()) / (static_cast<float> (RAND_MAX / (50 + 50)));
+
+		worldMatrices[i] = XMMatrixTranslation(x, 1, z);
+	}
+
 	return true;
 }
 
-bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float frameTime)
+bool Graphics::Frame(Camera::CameraInputType input, GraphicInput gInput, int fps, int cpu, float frameTime, bool logData, bool resetData)
 {
+	DataCollector::GetInstance().UpdateTimer();
+
+	if (logData)
+	{
+		DataCollector::GetInstance().GenerateLog();
+	}
+
+	if (resetData)
+	{
+		DataCollector::GetInstance().Reset();
+	}
+
+	if (gInput.GPURender)
+	{
+		renderMode = 0;
+	}
+	else if (gInput.CPURender)
+	{
+		renderMode = 1;
+	}
+	else if (gInput.ForwardRender)
+	{
+		renderMode = 2;
+	}
+	else if (gInput.GPURenderMulti)
+	{
+		renderMode = 3;
+	}
+	else if (gInput.CPURenderMulti)
+	{
+		renderMode = 4;
+	}
+	else if (gInput.ForwardRenderMulti)
+	{
+		renderMode = 5;
+	}
+
 	bool result;
 
 	static float rotation = 0.0f;
@@ -289,14 +362,6 @@ void Graphics::Shutdown()
 		m_Frustum = 0;
 	}
 
-	// Release the modellist object
-	if (m_ModelList)
-	{
-		m_ModelList->Shutdown();
-		delete m_ModelList;
-		m_ModelList = 0;
-	}
-
 	//Remove renderer
 	if (m_Renderer)
 	{
@@ -313,6 +378,13 @@ void Graphics::Shutdown()
 		m_CpuRenderer = 0;
 	}
 
+	if (m_ForwardRender)
+	{
+		m_ForwardRender->Shutdown();
+		delete m_ForwardRender;
+		m_ForwardRender = 0;
+	}
+
 	if (m_model)
 	{
 		m_model->Shutdown();
@@ -320,7 +392,12 @@ void Graphics::Shutdown()
 		m_model = 0;
 	}
 
-	
+	if (m_sphereModel)
+	{
+		m_sphereModel->Shutdown();
+		delete m_sphereModel;
+		m_sphereModel = 0;
+	}
 
 }
 
@@ -345,9 +422,42 @@ bool Graphics::Render(float rotation)
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Direct3D->GetOrthoMatrix(orthoMatrix);
 
-	m_Renderer->Render(m_Direct3D, m_Camera, m_model);
+	m_lightList.UpdateLights(viewMatrix);
 
-	m_CpuRenderer->Render(m_Direct3D, m_Camera, m_model);
+	//DataCollector::GetInstance()->StartTimer();
+
+	
+
+	//DataCollector::GetInstance()->EndTimer();
+
+	m_Text->QueueString(std::to_string(DataCollector::GetInstance().GetFps()), 20, 80, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
+
+	if (renderMode == 0)
+	{
+		m_Renderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
+	}
+	else if (renderMode == 1)
+	{
+		m_CpuRenderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
+	}
+	else if (renderMode == 2)
+	{
+		m_ForwardRender->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
+	}
+	else if (renderMode == 3)
+	{
+		m_Renderer->MultiModelRender(m_Direct3D, m_Camera, m_model, &m_lightList, m_sphereModel, worldMatrices, NUM_MODEL);
+	}
+	else if (renderMode == 4)
+	{
+		m_CpuRenderer->MultiModelRender(m_Direct3D, m_Camera, m_model, &m_lightList, m_sphereModel, worldMatrices, NUM_MODEL);
+	}
+	else if (renderMode == 5)
+	{
+		m_ForwardRender->MultiModelRender(m_Direct3D, m_Camera, m_model, &m_lightList, m_sphereModel, worldMatrices, NUM_MODEL);
+	}
+
+	//m_CpuRenderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
 
 	////Contstruct the frustum
 	//m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix);
@@ -373,45 +483,9 @@ bool Graphics::Render(float rotation)
 	//	//If it can be seen then render it if not skip this model and check the next sphere
 	//	if (true)
 	//	{
-	//		m_Direct3D->GetWorldMatrix(worldMatrix);
 
-	//		//Rotate the world matrix by the rotation value so that the tiangle will spin
-	//		worldMatrix = worldMatrix * XMMatrixRotationY(rotation);
-
-	//		//Move the model to the location it should be rendered at
-	//		worldMatrix = worldMatrix * XMMatrixTranslation(positionX, positionY, positionZ);
-
-			//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
-			//m_model->Render(m_Direct3D->GetDeviceContext());
-
-			////Render the model using the light shader
-			//result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_model->GetIndexCount(), m_model->GetWorldMatrix(), viewMatrix, projectionMatrix,
-			//	m_model->GetTexture(),
-			//	m_Camera->GetPosition(), &m_lightList);
-			//if (!result)
-			//{
-			//	return false;
-			//}
-
-	//		//Since this model was rendered increment the count
-	//		renderCount++;
 	//	}
 	//}
-
-			//for (int i = 0; i < modelList.GetModelCount(); i++)
-			//{
-			//	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
-			//	modelList.GetModel(i)->Render(m_Direct3D->GetDeviceContext());
-
-			//	//Render the model using the light shader
-			//	result = m_LightShader->Render(m_Direct3D->GetDeviceContext(), modelList.GetModel(i)->GetIndexCount(), modelList.GetModel(i)->GetWorldMatrix(), viewMatrix, projectionMatrix,
-			//		modelList.GetModel(i)->GetTexture(),
-			//		m_Camera->GetPosition());
-			//	if (!result)
-			//	{
-			//		return false;
-			//	}
-			//}
 
 	//Turn of the Z buffer to begin all 2D rendering
 	m_Direct3D->TurnZBufferOff();

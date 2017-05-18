@@ -10,11 +10,17 @@ public:
 	{
 		bool forward, back, left, right;
 		int mouseX, mouseY;
+		int mouseIX, mouseIY;
+
+		bool rightMouseButton;
 
 		CameraInputType()
 		{
 			forward = back = left = right = false;
 			mouseX = mouseY = -1;
+			mouseIX = mouseIY = -1;
+
+			rightMouseButton = false;
 		}
 	};
 

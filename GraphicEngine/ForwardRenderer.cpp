@@ -3,16 +3,13 @@
 ForwardRenderer::ForwardRenderer()
 {
 	m_Shader = 0;
-	m_frameLights = 0;
-	m_frameModels = 0;
-	m_Model = 0;
 }
 
 ForwardRenderer::~ForwardRenderer()
 {
 }
 
-bool ForwardRenderer::Initialize(ID3D11Device* device, HWND hwnd)
+bool ForwardRenderer::Initialize(ID3D11Device* device, HWND hwnd, int numLights)
 {
 	bool result;
 
@@ -32,6 +29,9 @@ bool ForwardRenderer::Initialize(ID3D11Device* device, HWND hwnd)
 		return false;
 	}
 
+	m_StructuredLightBuffer.Initialize(numLights, sizeof(Light), true, false, NULL, device);
+	m_StructuredLightBuffer.InitializeResourceView(device);
+
 	return true;
 }
 
@@ -46,48 +46,136 @@ void ForwardRenderer::Shutdown()
 	}
 }
 
-bool ForwardRenderer::SetupData(ModelList* modelList, Light* light, ModelAsset* model)
+bool ForwardRenderer::Render(D3D* directX, Camera* camera, Model* model, LightList* lights)
 {
-	m_frameModels = modelList;
-	m_frameLights = light;
-	m_Model = model;
+	bool result;
+	HRESULT hr;
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+
+	camera->GetViewMatrix(viewMatrix);
+	directX->GetProjectionMatrix(projectionMatrix);
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	Light* dataPtr;
+
+	//Lock the light constant buffer so it can be written to
+	hr = directX->GetDeviceContext()->Map(m_StructuredLightBuffer.GetBuffer(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	//Get a pointer to the data in the constant buffer
+	dataPtr = (Light*)mappedResource.pData;
+
+	std::vector<Light> lightVector = lights->GetLightList();
+
+	for (int i = 0; i < lightVector.size(); i++)
+	{
+		Light light = lightVector[i];
+
+		//Copy the lighting variables into the constant buffer
+		dataPtr[i].m_Color = light.m_Color;
+
+		dataPtr[i].m_DirectionWS = light.m_DirectionWS;
+		dataPtr[i].m_DirectionVS = light.m_DirectionVS;
+
+		dataPtr[i].m_PositionWS = light.m_PositionWS;
+		dataPtr[i].m_PositionVS = light.m_PositionVS;
+
+		dataPtr[i].m_Range = light.m_Range;
+		dataPtr[i].m_Intensity = light.m_Intensity;
+		dataPtr[i].m_Enabled = light.m_Enabled;
+		dataPtr[i].m_SpotlightAngle = light.m_SpotlightAngle;
+		dataPtr[i].m_Type = light.m_Type;
+	}
+
+	//Unlock the constant buffer
+	directX->GetDeviceContext()->Unmap(m_StructuredLightBuffer.GetBuffer(), 0);
+
+	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
+	model->Render(directX->GetDeviceContext());
+
+	directX->GetDeviceContext()->PSSetShaderResources(1, 1, m_StructuredLightBuffer.GetResourceView());
+
+	result = m_Shader->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix,
+		model->GetTexture(), camera->GetPosition());
+	if (!result)
+	{
+		return false;
+	}
 
 	return true;
 }
 
-bool ForwardRenderer::Render(D3D* directX, Camera* camera)
+bool ForwardRenderer::MultiModelRender(D3D * directX, Camera * camera, Model * model, LightList * lights, Model * multiModel, XMMATRIX * worldMatrices, int numModels)
 {
 	bool result;
+	HRESULT hr;
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	float positionX, positionY, positionZ, radius;
 
-	for (int i = 0; i < m_frameModels->GetModelCount(); i++)
-	{
-
-	}
-	//Get the view and projection matrices
 	camera->GetViewMatrix(viewMatrix);
 	directX->GetProjectionMatrix(projectionMatrix);
 
-	for (int index = 0; index < m_frameModels->GetModelCount(); index++)
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	Light* dataPtr;
+
+	//Lock the light constant buffer so it can be written to
+	hr = directX->GetDeviceContext()->Map(m_StructuredLightBuffer.GetBuffer(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(hr))
 	{
-		//Reset the view matrix for the next model
-		directX->GetWorldMatrix(worldMatrix);
+		return false;
+	}
 
-		//Move the model to the location it should be rendered at
-		worldMatrix = worldMatrix * XMMatrixTranslation(positionX, positionY, positionZ);
+	//Get a pointer to the data in the constant buffer
+	dataPtr = (Light*)mappedResource.pData;
 
-		//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
-		m_Model->Render(directX->GetDeviceContext());
+	std::vector<Light> lightVector = lights->GetLightList();
 
-		////Render the model using the light shader
-		//result = m_Shader->Render(directX->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-		//	m_Model->GetTexture(), m_frameLights->GetDirection(), m_frameLights->GetDiffuseColor(), m_frameLights->GetAmbientColor(),
-		//	camera->GetPosition(), m_frameLights->GetSpecularColor(), m_frameLights->GetSpecularPower());
-		//if (!result)
-		//{
-		//	return false;
-		//}
+	for (int i = 0; i < lightVector.size(); i++)
+	{
+		Light light = lightVector[i];
+
+		//Copy the lighting variables into the constant buffer
+		dataPtr[i].m_Color = light.m_Color;
+
+		dataPtr[i].m_DirectionWS = light.m_DirectionWS;
+		dataPtr[i].m_DirectionVS = light.m_DirectionVS;
+
+		dataPtr[i].m_PositionWS = light.m_PositionWS;
+		dataPtr[i].m_PositionVS = light.m_PositionVS;
+
+		dataPtr[i].m_Range = light.m_Range;
+		dataPtr[i].m_Intensity = light.m_Intensity;
+		dataPtr[i].m_Enabled = light.m_Enabled;
+		dataPtr[i].m_SpotlightAngle = light.m_SpotlightAngle;
+		dataPtr[i].m_Type = light.m_Type;
+	}
+
+	//Unlock the constant buffer
+	directX->GetDeviceContext()->Unmap(m_StructuredLightBuffer.GetBuffer(), 0);
+	directX->GetDeviceContext()->PSSetShaderResources(1, 1, m_StructuredLightBuffer.GetResourceView());
+
+	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
+	model->Render(directX->GetDeviceContext());
+
+	result = m_Shader->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix,
+		model->GetTexture(), camera->GetPosition());
+	if (!result)
+	{
+		return false;
+	}
+
+	multiModel->Render(directX->GetDeviceContext());
+
+	for (int i = 0; i < numModels; i++)
+	{
+		result = m_Shader->Render(directX->GetDeviceContext(), multiModel->GetIndexCount(), worldMatrices[i], viewMatrix, projectionMatrix,
+			multiModel->GetTexture(), camera->GetPosition());
+		if (!result)
+		{
+			return false;
+		}
 	}
 
 	return true;

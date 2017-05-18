@@ -40,8 +40,8 @@ public:
 
 private:
 	const static int BLOCK_SIZE = 16;
-	const static int SCREEN_WIDTH = 1280;
-	const static int SCREEN_HEIGHT = 720;
+	const static int SCREEN_WIDTH = 800;
+	const static int SCREEN_HEIGHT = 480;
 	const static uint32_t AVERAGE_OVERLAPPING_LIGHTS_PER_TILE = 200u;
 
 	StructuredBuffer m_indexCounterInitialBuffer;

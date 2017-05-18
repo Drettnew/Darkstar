@@ -50,6 +50,10 @@ void Input::ProcessInput()
 	m_mouseX += m_mouseState.lX;
 	m_mouseY += m_mouseState.lY;
 
+	//Save delta movement
+	m_mouseIX = m_mouseState.lX;
+	m_mouseIY = m_mouseState.lY;
+
 	// Ensure the mouse location doesn't exceed the screen width or height.
 	if (m_mouseX < 0) { m_mouseX = 0; }
 	if (m_mouseY < 0) { m_mouseY = 0; }
@@ -82,6 +86,9 @@ bool Input::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 	//Initialize the location of the mouse
 	m_mouseX = 0;
 	m_mouseY = 0;
+
+	m_mouseIX = 0;
+	m_mouseIY = 0;
 
 	//Initialize the main direct input interface
 	result = DirectInput8Create(hinstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&m_directInput, NULL);
@@ -213,6 +220,25 @@ Camera::CameraInputType Input::GetCameraInputs()
 
 	output.mouseX = m_mouseX;
 	output.mouseY = m_mouseY;
+
+	output.mouseIX = m_mouseIX;
+	output.mouseIY = m_mouseIY;
+
+	output.rightMouseButton = IsKeyDown(DIK_E);
+
+	return output;
+}
+
+Graphics::GraphicInput Input::GetGraphicInputs()
+{
+	Graphics::GraphicInput output;
+	output.GPURender = IsKeyDown(DIK_NUMPAD1);
+	output.CPURender = IsKeyDown(DIK_NUMPAD2);
+	output.ForwardRender = IsKeyDown(DIK_NUMPAD3);
+
+	output.GPURenderMulti = IsKeyDown(DIK_NUMPAD4);
+	output.CPURenderMulti = IsKeyDown(DIK_NUMPAD5);
+	output.ForwardRenderMulti = IsKeyDown(DIK_NUMPAD6);
 
 	return output;
 }

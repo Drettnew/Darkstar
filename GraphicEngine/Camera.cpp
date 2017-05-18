@@ -51,10 +51,12 @@ void Camera::HandleInputs(CameraInputType cameraInput, float dt)
 	//Set the frame time used for updating the postion
 	m_cameraPosition.SetFrameTime(dt);
 
-	if (cameraInput.forward || false)
+	if (cameraInput.rightMouseButton)
 	{
-		m_cameraPosition.MoveForward(cameraInput.forward);
+		//Update look
+		m_cameraPosition.MouseMove(cameraInput.mouseIX, cameraInput.mouseIY);
 	}
+
 	//Update the position
 	m_cameraPosition.MoveForward(cameraInput.forward);
 	m_cameraPosition.MoveBackward(cameraInput.back);
@@ -62,6 +64,8 @@ void Camera::HandleInputs(CameraInputType cameraInput, float dt)
 	//Update the rotation
 	m_cameraPosition.TurnLeft(cameraInput.left);
 	m_cameraPosition.TurnRight(cameraInput.right);
+
+
 }
 
 void Camera::Render()

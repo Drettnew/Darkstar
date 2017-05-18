@@ -7,6 +7,7 @@
 
 #include <dinput.h>
 #include "Camera.h"
+#include "Graphics.h"
 
 class Input
 {
@@ -24,6 +25,7 @@ private:
 
 	int m_screenWidth, m_screenHeight;
 	int m_mouseX, m_mouseY;
+	int m_mouseIX, m_mouseIY;
 
 	bool ReadKeyboard();
 	bool ReadMouse();
@@ -38,6 +40,7 @@ public:
 	bool Frame();
 
 	Camera::CameraInputType GetCameraInputs();
+	Graphics::GraphicInput GetGraphicInputs();
 
 	bool IsKeyDown(unsigned int key);
 	bool IsKeyHit(unsigned int key);

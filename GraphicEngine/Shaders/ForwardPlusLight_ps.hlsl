@@ -185,7 +185,7 @@ float4 ForwardPlusLightPixelShader(PixelInputType input) : SV_Target
 
     float4 positionWS = float4(input.positionVS, 1.0f);
     float4 normalWS = float4(input.normal, 0.0f);
-    float4 viewDir = float4(input.viewDirection, 1.0f);
+    float4 viewDir = float4(input.viewDirection, 0.0f);
 
     float3 positionVS = mul(positionWS, input.mat);
     float3 normalVS = normalize(mul(normalWS, input.mat));

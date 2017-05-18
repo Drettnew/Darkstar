@@ -9,7 +9,7 @@
 using namespace DirectX;
 using namespace std;
 
-class LightShader
+class ForwardPlusCPULightShader
 {
 private:
 	struct MatrixBufferType
@@ -45,15 +45,15 @@ private:
 	void OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename);
 
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition);
+		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition, LightList* lightList);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 public:
-	LightShader();
-	LightShader(const LightShader&);
-	~LightShader();
+	ForwardPlusCPULightShader();
+	ForwardPlusCPULightShader(const ForwardPlusCPULightShader&);
+	~ForwardPlusCPULightShader();
 
 	bool Initialize(ID3D11Device* device, HWND hwnd);
 	void Shutdown();
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition);
+		XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition, LightList* lightList);
 };

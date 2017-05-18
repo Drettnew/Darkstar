@@ -5,7 +5,7 @@
 
 #ifndef NUM_LIGHTS
 #pragma message( "NUM_LIGHTS undefined. Default to 8.")
-#define NUM_LIGHTS 25 // should be defined by the application.
+#define NUM_LIGHTS 64 // should be defined by the application.
 #endif
 
 #define POINT_LIGHT 0
@@ -237,9 +237,9 @@ bool ConeInsideFrustum(Cone cone, Frustum frustum, float zNear, float zFar)
 
 SamplerState SampleType : register(s0);
 
-Texture2D DepthTextureVS : register(t0);
+//Texture2D DepthTextureVS : register(t0);
 
-StructuredBuffer<Frustum> in_Frustums : register(t1);
+//StructuredBuffer<Frustum> in_Frustums : register(t1);
 
 StructuredBuffer<Light> LightBuffer : register(t2);
 
@@ -252,8 +252,8 @@ RWTexture2D<uint2> LightGrid : register(u2);
 RWTexture2D<float4> DebugTexture : register(u3);
 
 // Group shared variables.
-groupshared uint uMinDepth;
-groupshared uint uMaxDepth;
+//groupshared uint uMinDepth;
+//groupshared uint uMaxDepth;
 groupshared Frustum GroupFrustum;
 
 // Opaque geometry light lists.
@@ -292,36 +292,36 @@ void CullingComputeShader(ComputeShaderInput input)
 {
     // Calculate min & max depth in threadgroup / tile.
     int2 texCoord = input.dispatchThreadID.xy;
-    float fDepth = DepthTextureVS.Load(int3(texCoord, 0)).r;
+    //float fDepth = DepthTextureVS.Load(int3(texCoord, 0)).r;
 
-    uint uDepth = asuint(fDepth);
+    //uint uDepth = asuint(fDepth);
 
     if (input.groupIndex == 0) // Avoid contention by other threads in the group.
     {
-        uMinDepth = 0xffffffff;
-        uMaxDepth = 0;
+        //uMinDepth = 0xffffffff;
+        //uMaxDepth = 0;
         LightCount = 0;
-        GroupFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
+        //GroupFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
     }
 
-    GroupMemoryBarrierWithGroupSync();
+    //GroupMemoryBarrierWithGroupSync();
 
-    InterlockedMin(uMinDepth, uDepth);
-    InterlockedMax(uMaxDepth, uDepth);
+    //InterlockedMin(uMinDepth, uDepth);
+    //InterlockedMax(uMaxDepth, uDepth);
 
-    GroupMemoryBarrierWithGroupSync();
+    //GroupMemoryBarrierWithGroupSync();
 
-    float fMinDepth = asfloat(uMinDepth);
-    float fMaxDepth = asfloat(uMaxDepth);
+    //float fMinDepth = asfloat(uMinDepth);
+    //float fMaxDepth = asfloat(uMaxDepth);
 
-    // Convert depth values to view space.
-    float minDepthVS = ScreenToView(float4(0, 0, fMinDepth, 1)).z;
-    float maxDepthVS = ScreenToView(float4(0, 0, fMaxDepth, 1)).z;
-    float nearClipVS = ScreenToView(float4(0, 0, 0, 1)).z;
+    //// Convert depth values to view space.
+    //float minDepthVS = ScreenToView(float4(0, 0, fMinDepth, 1)).z;
+    //float maxDepthVS = ScreenToView(float4(0, 0, fMaxDepth, 1)).z;
+    //float nearClipVS = ScreenToView(float4(0, 0, 0, 1)).z;
 
-    // Clipping plane for minimum depth value 
-    // (used for testing lights within the bounds of opaque geometry).
-    Plane minPlane = { float3(0, 0, -1), -minDepthVS };
+    //// Clipping plane for minimum depth value 
+    //// (used for testing lights within the bounds of opaque geometry).
+    //Plane minPlane = { float3(0, 0, -1), -minDepthVS };
 
     //Frustum frustum;
 
@@ -387,15 +387,15 @@ void CullingComputeShader(ComputeShaderInput input)
                         bool frustum1 = GetSignedDistanceFromPlane(center, frustum[1]) < r;
                         bool frustum2 = GetSignedDistanceFromPlane(center, frustum[2]) < r;
                         bool frustum3 = GetSignedDistanceFromPlane(center, frustum[3]) < r;
-                        bool min = (-center.z + minDepthVS < r);
-                        bool max = (center.z - maxDepthVS < r);
+                        //bool min = (-center.z + minDepthVS < r);
+                        //bool max = (center.z - maxDepthVS < r);
                         
                         if (frustum0 &&
                             frustum1 &&
                             frustum2 &&
-                            frustum3 &&
-                            min &&
-                            max)
+                            frustum3 )//&&
+                            //min &&
+                            //max)
                         {
         
                             // Add light to light list for opaque geometry.
@@ -404,27 +404,27 @@ void CullingComputeShader(ComputeShaderInput input)
                         }
                     }
                     break;
-                case SPOT_LIGHT:
-            {
-                        float coneRadius = tan(radians(light.SpotlightAngle)) * light.Range;
-                        Cone cone = { light.PositionVS.xyz, light.Range, light.DirectionVS.xyz, coneRadius };
-                        if (ConeInsideFrustum(cone, GroupFrustum, nearClipVS, maxDepthVS))
-                        {
-                            if (!ConeInsidePlane(cone, minPlane))
-                            {
-                        // Add light to light list for opaque geometry.
-                                AppendLight(i);
-                            }
-                        }
-                    }
-                    break;
-                case DIRECTIONAL_LIGHT:
-            {
-                // Directional lights always get added to our light list.
-                // (Hopefully there are not too many directional lights!)
-                        AppendLight(i);
-                    }
-                    break;
+            //    case SPOT_LIGHT:
+            //{
+            //            float coneRadius = tan(radians(light.SpotlightAngle)) * light.Range;
+            //            Cone cone = { light.PositionVS.xyz, light.Range, light.DirectionVS.xyz, coneRadius };
+            //            if (ConeInsideFrustum(cone, GroupFrustum, nearClipVS, maxDepthVS))
+            //            {
+            //                if (!ConeInsidePlane(cone, minPlane))
+            //                {
+            //            // Add light to light list for opaque geometry.
+            //                    AppendLight(i);
+            //                }
+            //            }
+            //        }
+            //        break;
+            //    case DIRECTIONAL_LIGHT:
+            //{
+            //    // Directional lights always get added to our light list.
+            //    // (Hopefully there are not too many directional lights!)
+            //            AppendLight(i);
+            //        }
+            //        break;
             }
         }
     }

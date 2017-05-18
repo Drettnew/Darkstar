@@ -24,6 +24,8 @@ public:
 	void LookUpward(bool keydown);
 	void LookDownward(bool keydown);
 
+	void MouseMove(int mouseX, int mouseY);
+
 private:
 	float m_positionX, m_positionY, m_positionZ;
 	float m_rotationX, m_rotationY, m_rotationZ;

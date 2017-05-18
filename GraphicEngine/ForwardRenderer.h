@@ -14,17 +14,13 @@ public:
 	ForwardRenderer();
 	~ForwardRenderer();
 
-	bool Initialize(ID3D11Device* device, HWND hwnd);
+	bool Initialize(ID3D11Device* device, HWND hwnd, int numLights);
 	void Shutdown();
+	bool Render(D3D* directX, Camera* camera, Model* model, LightList* lights);
 
-	bool SetupData(ModelList* modelList, Light* light, ModelAsset* model);
-	bool Render(D3D* directX, Camera* camera);
+	bool MultiModelRender(D3D* directX, Camera* camera, Model* model, LightList* lights, Model* multiModel, XMMATRIX* worldMatrices, int numModels);
 
 private:
-	ModelList* m_frameModels;
-	Light* m_frameLights;
-
-	//TEMP
-	ModelAsset* m_Model;
 	LightShader* m_Shader;
+	StructuredBuffer m_StructuredLightBuffer;
 };

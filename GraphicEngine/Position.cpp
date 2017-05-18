@@ -61,7 +61,7 @@ void Position::SetFrameTime(float frameTime)
 
 void Position::MoveForward(bool keydown)
 {
-	float radians;
+	float radians, radiansX;
 
 	// Update the forward speed movement based on the frame time and whether the user is holding the key down or not.
 	if (keydown)
@@ -84,16 +84,19 @@ void Position::MoveForward(bool keydown)
 
 	// Convert degrees to radians.
 	radians = m_rotationY * 0.0174532925f;
+	radiansX = m_rotationX * 0.0174532925f;
 
 	// Update the position.
 	m_positionX += sinf(radians) * m_forwardSpeed;
 	m_positionZ += cosf(radians) * m_forwardSpeed;
+	m_positionY -= sinf(radiansX) * m_forwardSpeed;
+
+	
 }
 
 void Position::MoveBackward(bool keydown)
 {
-	float radians;
-
+	float radians, radiansX;
 
 	// Update the backward speed movement based on the frame time and whether the user is holding the key down or not.
 	if (keydown)
@@ -117,10 +120,12 @@ void Position::MoveBackward(bool keydown)
 
 	// Convert degrees to radians.
 	radians = m_rotationY * 0.0174532925f;
+	radiansX = m_rotationX * 0.0174532925f;
 
 	// Update the position.
 	m_positionX -= sinf(radians) * m_backwardSpeed;
 	m_positionZ -= cosf(radians) * m_backwardSpeed;
+	m_positionY += sinf(radiansX) * m_backwardSpeed;
 
 }
 
@@ -307,4 +312,22 @@ void Position::LookDownward(bool keydown)
 		m_rotationX = -90.0f;
 	}
 
+}
+
+void Position::MouseMove(int mouseX, int mouseY)
+{
+	m_rotationX += m_frameTime * mouseY * 0.2f;
+
+	// Keep the rotation maximum 90 degrees.
+	if (m_rotationX < -89.0f)
+	{
+		m_rotationX = -89.0f;
+	}
+
+	if (m_rotationX > 89.0f)
+	{
+		m_rotationX = 89.0f;
+	}
+
+	m_rotationY += m_frameTime * mouseX * 0.2f;
 }

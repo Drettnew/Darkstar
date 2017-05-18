@@ -44,8 +44,8 @@ public:
 	void Dispatch(ID3D11DeviceContext* deviceContext, ID3D11Device * device, int x, int y, int z);
 private:
 	const static int BLOCK_SIZE = 16;
-	const static int SCREEN_WIDTH = 1280;
-	const static int SCREEN_HEIGHT = 720;
+	const static int SCREEN_WIDTH = 800;
+	const static int SCREEN_HEIGHT = 480;
 
 	ID3D11ComputeShader* m_computeShader;
 	StructuredBuffer m_structuredBuffer;
