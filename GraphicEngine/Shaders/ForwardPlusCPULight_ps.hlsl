@@ -1,13 +1,13 @@
 //TYPEDEFS
 #ifndef BLOCK_SIZE_X
 #pragma message( "BLOCK_SIZE undefined. Default to 16.")
-#define BLOCK_SIZE_X 400 // should be defined by the application.
+#define BLOCK_SIZE_X 320 // should be defined by the application.
 #endif
 
 //TYPEDEFS
 #ifndef BLOCK_SIZE_Y
 #pragma message( "BLOCK_SIZE undefined. Default to 16.")
-#define BLOCK_SIZE_Y 240 // should be defined by the application.
+#define BLOCK_SIZE_Y 180 // should be defined by the application.
 #endif
 
 #define POINT_LIGHT 0

@@ -121,14 +121,14 @@ unsigned int _stdcall myThread(LPVOID lpParameter)
 
 	parameter* param = (parameter*)lpParameter;
 
-	const int tileX = 2;
-	const int tileY = 2;
+	const int tileX = 4;
+	const int tileY = 4;
 
-	const int screen_width = 800;
-	const int screen_height = 480;
+	const int screen_width = 1280;
+	const int screen_height = 720;
 
-	int blockSizeX = 800 / tileX;
-	int blockSizeY = 480 / tileY;
+	int blockSizeX = screen_width / tileX;
+	int blockSizeY = screen_height / tileY;
 
 	unsigned int pxm = blockSizeX * param->threadID.x;
 	unsigned int pym = blockSizeY * param->threadID.y;

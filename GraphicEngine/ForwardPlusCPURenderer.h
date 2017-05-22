@@ -16,10 +16,10 @@
 class ForwardPlusCPU
 {
 public:
-	const static int tileX = 2;
-	const static int tileY = 2;
-	const static int SCREEN_WIDTH = 800;
-	const static int SCREEN_HEIGHT = 480;
+	const static int tileX = 4;
+	const static int tileY = 4;
+	const static int SCREEN_WIDTH = 1280;
+	const static int SCREEN_HEIGHT = 720;
 	const static uint32_t AVERAGE_OVERLAPPING_LIGHTS_PER_TILE = 200u;
 
 	ForwardPlusCPU();
