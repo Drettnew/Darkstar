@@ -10,8 +10,6 @@ Graphics::Graphics() {
 	m_Frustum = 0;
 	//m_Assets = 0;
 	m_Renderer = 0;
-	m_ForwardRender = 0;
-	m_CpuRenderer = 0;
 	m_model = 0;
 	m_sphereModel = 0;
 }
@@ -77,7 +75,7 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 
 
 	// Set the initial position of the camera.
-	m_Camera->SetPosition(0.0f, 30.0f, -50.0f);
+	m_Camera->SetPosition(0.0f, 2.0f, 0.0f);
 
 	m_model = new Model();
 
@@ -188,36 +186,6 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 		return false;
 	}
 
-	//Create the renderer object
-	m_CpuRenderer = new ForwardPlusCPU;
-	if (!m_CpuRenderer)
-	{
-		return false;
-	}
-
-	//Initialize the renderer object
-	result = m_CpuRenderer->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, NUM_LIGHTS);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
-		return false;
-	}
-
-	//Create the renderer object
-	m_ForwardRender = new ForwardRenderer;
-	if (!m_ForwardRender)
-	{
-		return false;
-	}
-
-	//Initialize the renderer object
-	result = m_ForwardRender->Initialize(m_Direct3D->GetDevice(), hwnd, NUM_LIGHTS);
-	if (!result)
-	{
-		MessageBox(hwnd, L"Could not initialize the renderer object", L"Error", MB_OK);
-		return false;
-	}
-
 	//Seed the random generator with the current time
 	srand((unsigned int)time(NULL));
 
@@ -233,50 +201,13 @@ bool Graphics::Initialize(int & width, int & height, HWND hwnd)
 	return true;
 }
 
-bool Graphics::Frame(Camera::CameraInputType input, GraphicInput gInput, int fps, int cpu, float frameTime, bool logData, bool resetData)
+bool Graphics::Frame(Camera::CameraInputType input, int fps, int cpu, float frameTime)
 {
-	DataCollector::GetInstance().UpdateTimer();
-
-	if (logData)
-	{
-		DataCollector::GetInstance().GenerateLog();
-	}
-
-	if (resetData)
-	{
-		DataCollector::GetInstance().Reset();
-	}
-
-	if (gInput.GPURender)
-	{
-		renderMode = 0;
-	}
-	else if (gInput.CPURender)
-	{
-		renderMode = 1;
-	}
-	else if (gInput.ForwardRender)
-	{
-		renderMode = 2;
-	}
-	else if (gInput.GPURenderMulti)
-	{
-		renderMode = 3;
-	}
-	else if (gInput.CPURenderMulti)
-	{
-		renderMode = 4;
-	}
-	else if (gInput.ForwardRenderMulti)
-	{
-		renderMode = 5;
-	}
-
 	bool result;
 
 	static float rotation = 0.0f;
 
-	m_Text->QueueString("wubba lubba dub dub", 20, 60, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
+	m_Text->QueueString(std::to_string(input.rightMouseButton), 20, 60, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
 
 	//Run assets reference checks
 	//m_Assets->upload();
@@ -370,21 +301,6 @@ void Graphics::Shutdown()
 		m_Renderer = 0;
 	}
 
-	//Remove renderer
-	if (m_CpuRenderer)
-	{
-		m_CpuRenderer->Shutdown();
-		delete m_CpuRenderer;
-		m_CpuRenderer = 0;
-	}
-
-	if (m_ForwardRender)
-	{
-		m_ForwardRender->Shutdown();
-		delete m_ForwardRender;
-		m_ForwardRender = 0;
-	}
-
 	if (m_model)
 	{
 		m_model->Shutdown();
@@ -424,38 +340,7 @@ bool Graphics::Render(float rotation)
 
 	m_lightList.UpdateLights(viewMatrix);
 
-	//DataCollector::GetInstance()->StartTimer();
-
-	
-
-	//DataCollector::GetInstance()->EndTimer();
-
-	m_Text->QueueString(std::to_string(DataCollector::GetInstance().GetFps()), 20, 80, 0.0f, 1.0f, 0.0f, m_Direct3D->GetDeviceContext());
-
-	if (renderMode == 0)
-	{
-		m_Renderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
-	}
-	else if (renderMode == 1)
-	{
-		m_CpuRenderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
-	}
-	else if (renderMode == 2)
-	{
-		m_ForwardRender->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
-	}
-	else if (renderMode == 3)
-	{
-		m_Renderer->MultiModelRender(m_Direct3D, m_Camera, m_model, &m_lightList, m_sphereModel, worldMatrices, NUM_MODEL);
-	}
-	else if (renderMode == 4)
-	{
-		m_CpuRenderer->MultiModelRender(m_Direct3D, m_Camera, m_model, &m_lightList, m_sphereModel, worldMatrices, NUM_MODEL);
-	}
-	else if (renderMode == 5)
-	{
-		m_ForwardRender->MultiModelRender(m_Direct3D, m_Camera, m_model, &m_lightList, m_sphereModel, worldMatrices, NUM_MODEL);
-	}
+	m_Renderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
 
 	//m_CpuRenderer->Render(m_Direct3D, m_Camera, m_model, &m_lightList);
 

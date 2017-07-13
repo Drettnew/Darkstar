@@ -121,14 +121,12 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model, LightL
 	camera->GetViewMatrix(viewMatrix);
 	directX->GetProjectionMatrix(projectionMatrix);
 
-	//m_lightList.UpdateLights(viewMatrix);
-
 	//Put the model vertex and index buffer on the graphics pipeline to prepare them for drawing
 	model->Render(directX->GetDeviceContext());
 
-	//m_depthPrePass->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix);
+	m_depthPrePass->Render(directX->GetDeviceContext(), model->GetIndexCount(), model->GetWorldMatrix(), viewMatrix, projectionMatrix);
 
-	//directX->Reset();
+	directX->Reset();
 
 	//if (!m_HasGeneratedFrustum)
 	//{
@@ -175,15 +173,15 @@ bool ForwardPlusGPU::Render(D3D * directX, Camera * camera, Model* model, LightL
 	//Unlock the constant buffer
 	directX->GetDeviceContext()->Unmap(m_StructuredLightBuffer.GetBuffer(), 0);
 
-	/*m_depthPrePass->Bind(directX->GetDeviceContext(), 0);
-	m_FrustumCS->Bind(directX->GetDeviceContext(), 1);*/
+	m_depthPrePass->Bind(directX->GetDeviceContext(), 0);
+	/*m_FrustumCS->Bind(directX->GetDeviceContext(), 1);*/
 	m_CullingCS->SetShaderParameters(directX->GetDeviceContext(), projectionMatrix, viewMatrix);
 
 	directX->GetDeviceContext()->CSSetShaderResources(2, 1, m_StructuredLightBuffer.GetResourceView());
 
 	m_CullingCS->Dispatch(directX->GetDeviceContext(), directX->GetDevice(), 16, 16, 1);
-	/*m_depthPrePass->Unbind(directX->GetDeviceContext(), 0);
-	m_FrustumCS->Unbind(directX->GetDeviceContext(), 1);*/
+	m_depthPrePass->Unbind(directX->GetDeviceContext(), 0);
+	/*m_FrustumCS->Unbind(directX->GetDeviceContext(), 1);*/
 
 
 	m_CullingCS->Bind(directX->GetDeviceContext(), 2);

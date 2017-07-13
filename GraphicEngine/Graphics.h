@@ -4,23 +4,17 @@
 #include "D3D.h"
 #include "Camera.h"
 #include "ModelAsset.h"
-#include "ColorShader.h"
-#include "TextureShader.h"
-#include "LightShader.h"
 #include "Light.h"
 #include "Bitmap.h"
 #include "Text.h"
 #include "ModelList.h"
 #include "Frustum.h"
 
-#include "ForwardRenderer.h"
 #include "TextureAsset.h"
 #include "Assets.h"
 #include "Model.h"
 #include "ObjLoader.h"
 #include "ForwardPlusGPURenderer.h"
-#include "ForwardPlusCPURenderer.h"
-#include "DataCollector.h"
 
 //Globals
 const bool FULL_SCREEN = false;
@@ -48,10 +42,8 @@ public:
 		}
 	};
 private:
-	const static int NUM_LIGHTS = 64;
+	const static int NUM_LIGHTS = 1;
 	const static int NUM_MODEL = 64;
-
-	int renderMode = 0;
 
 	D3D* m_Direct3D;
 	Camera* m_Camera;
@@ -60,8 +52,6 @@ private:
 	Frustum* m_Frustum;
 
 	ForwardPlusGPU* m_Renderer;
-	ForwardPlusCPU* m_CpuRenderer;
-	ForwardRenderer* m_ForwardRender;
 	//Assets* m_Assets;
 	Model* m_model;
 	Model* m_sphereModel;
@@ -76,6 +66,6 @@ public:
 	GRAPHIC_API Graphics(const Graphics& other);
 	GRAPHIC_API ~Graphics();
 	GRAPHIC_API bool Initialize(int& width, int& height, HWND hwnd);
-	GRAPHIC_API bool Frame(Camera::CameraInputType input, GraphicInput gInput, int fps, int cpu, float frameTime, bool logData, bool resetData);
+	GRAPHIC_API bool Frame(Camera::CameraInputType input, int fps, int cpu, float frameTime);
 	GRAPHIC_API void Shutdown();
 };

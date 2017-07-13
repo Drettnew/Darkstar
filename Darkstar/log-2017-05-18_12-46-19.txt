@@ -1,4 +1,0 @@
-FPS: 
-33
-33
-Average FPS: 33

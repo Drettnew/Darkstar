@@ -1,8 +1,10 @@
 #pragma once
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <windowsx.h>
 #include "Graphics.h"
 #include "Input.h"
+#include "resource.h"
 
 #include "FpsCounter.h"
 #include "CpuCounter.h"
@@ -11,6 +13,14 @@
 class Darkstar
 {
 private:
+	const static int SCREEN_HEIGHT = 720;
+	const static int SCREEN_WIDTH = 1280;
+
+	int m_screenResolutionX;
+	int m_screenResolutionY;
+
+	bool mouseMoved = false;
+
 	LPCWSTR m_applicationName;
 	HINSTANCE m_hinstance;
 	HWND m_hwnd;

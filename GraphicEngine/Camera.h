@@ -10,7 +10,7 @@ public:
 	{
 		bool forward, back, left, right;
 		int mouseX, mouseY;
-		int mouseIX, mouseIY;
+		float mouseIX, mouseIY;
 
 		bool rightMouseButton;
 

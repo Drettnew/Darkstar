@@ -62,7 +62,7 @@ void LightList::Random(float maxX, float maxY, int numLights)
 
 		float intensity = 2 + ((float)rand() / (RAND_MAX / 5.0f));
 
-		LightType type = LightType::Point;//(LightType)(rand() % 2);
+		LightType type = LightType::Spot;//(LightType)(rand() % 2);
 
 		Light light;
 

@@ -228,8 +228,8 @@ bool DepthPass::InitializeDepthStencilView(ID3D11Device * device, ID3D11DeviceCo
 {
 	HRESULT result;
 
-	int screenWidth = 800;
-	int screenHeight = 480;
+	int screenWidth = 1280;
+	int screenHeight = 720;
 
 	D3D11_TEXTURE2D_DESC textureDesc;
 	textureDesc.Width = screenWidth;

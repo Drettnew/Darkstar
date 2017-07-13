@@ -157,6 +157,13 @@ Plane ComputePlane(float3 p1, float3 p2)
     return plane;
 }
 
+float GetSignedDistanceFromPlane(float3 p, float3 eqn)
+{
+    float result = dot(eqn, p);
+
+    return result;
+}
+
 bool SphereInsidePlane(Sphere sphere, Plane plane)
 {
     float dotProduct = dot(plane.N, sphere.c) - plane.d;
@@ -166,7 +173,7 @@ bool SphereInsidePlane(Sphere sphere, Plane plane)
 // Check to see if a point is fully behind (inside the negative halfspace of) a plane.
 bool PointInsidePlane(float3 p, Plane plane)
 {
-    return dot(plane.N, p) - plane.d < 0;
+    return dot(plane.N, p) < 0;
 }
 
 // Check to see if a cone if fully behind (inside the negative halfspace of) a plane.
@@ -192,7 +199,7 @@ bool SphereInsideFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar
     // First check depth
     // Note: Here, the view vector points in the -Z axis so the 
     // far depth value will be approaching -infinity.
-    if (sphere.c.z + sphere.r < zNear || sphere.c.z - sphere.r > zFar)
+    if ((-sphere.c.z + zNear > sphere.r) || (sphere.c.z - zFar > sphere.r))
     {
         result = false;
     }
@@ -200,8 +207,8 @@ bool SphereInsideFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar
     // Then check frustum planes
     for (int i = 0; i < 4 && result; i++)
     {
-        bool IsInside = SphereInsidePlane(sphere, frustum.planes[i]);
-        if (!IsInside)
+        bool distanceResult = GetSignedDistanceFromPlane(sphere.c, frustum.planes[i].N) < sphere.r;
+        if (!distanceResult)
         {
             result = false;
         }
@@ -214,14 +221,14 @@ bool ConeInsideFrustum(Cone cone, Frustum frustum, float zNear, float zFar)
 {
     bool result = true;
 
-    Plane nearPlane = { float3(0, 0, -1), -zNear };
-    Plane farPlane = { float3(0, 0, 1), zFar };
+    //Plane nearPlane = { float3(0, 0, -1), -zNear };
+    //Plane farPlane = { float3(0, 0, 1), zFar };
 
-    // First check the near and far clipping planes.
-    if (ConeInsidePlane(cone, nearPlane) || ConeInsidePlane(cone, farPlane))
-    {
-        result = false;
-    }
+    //// First check the near and far clipping planes.
+    //if (ConeInsidePlane(cone, nearPlane) || ConeInsidePlane(cone, farPlane))
+    //{
+    //    result = false;
+    //}
 
     // Then check frustum planes
     for (int i = 0; i < 4; i++)
@@ -237,7 +244,7 @@ bool ConeInsideFrustum(Cone cone, Frustum frustum, float zNear, float zFar)
 
 SamplerState SampleType : register(s0);
 
-//Texture2D DepthTextureVS : register(t0);
+Texture2D DepthTextureVS : register(t0);
 
 //StructuredBuffer<Frustum> in_Frustums : register(t1);
 
@@ -252,8 +259,8 @@ RWTexture2D<uint2> LightGrid : register(u2);
 RWTexture2D<float4> DebugTexture : register(u3);
 
 // Group shared variables.
-//groupshared uint uMinDepth;
-//groupshared uint uMaxDepth;
+groupshared uint uMinDepth;
+groupshared uint uMaxDepth;
 groupshared Frustum GroupFrustum;
 
 // Opaque geometry light lists.
@@ -272,13 +279,6 @@ void AppendLight(uint lightIndex)
     }
 }
 
-float GetSignedDistanceFromPlane(float3 p, float3 eqn)
-{
-    float result = dot(eqn, p);
-
-    return result;
-}
-
 float3 CreatePlaneEquation(float4 p1, float4 p2)
 {
     float3 b = p1.xyz;
@@ -292,38 +292,43 @@ void CullingComputeShader(ComputeShaderInput input)
 {
     // Calculate min & max depth in threadgroup / tile.
     int2 texCoord = input.dispatchThreadID.xy;
-    //float fDepth = DepthTextureVS.Load(int3(texCoord, 0)).r;
+    float fDepth = DepthTextureVS.Load(int3(texCoord, 0)).r;
 
-    //uint uDepth = asuint(fDepth);
+    uint uDepth = asuint(fDepth);
 
     if (input.groupIndex == 0) // Avoid contention by other threads in the group.
     {
-        //uMinDepth = 0xffffffff;
-        //uMaxDepth = 0;
+        uMinDepth = 0xffffffff;
+        uMaxDepth = 0;
         LightCount = 0;
         //GroupFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
     }
 
-    //GroupMemoryBarrierWithGroupSync();
+    GroupMemoryBarrierWithGroupSync();
 
-    //InterlockedMin(uMinDepth, uDepth);
-    //InterlockedMax(uMaxDepth, uDepth);
+    InterlockedMin(uMinDepth, uDepth);
+    InterlockedMax(uMaxDepth, uDepth);
 
-    //GroupMemoryBarrierWithGroupSync();
+    GroupMemoryBarrierWithGroupSync();
 
-    //float fMinDepth = asfloat(uMinDepth);
-    //float fMaxDepth = asfloat(uMaxDepth);
+    float fMinDepth = asfloat(uMinDepth);
+    float fMaxDepth = asfloat(uMaxDepth);
 
     //// Convert depth values to view space.
-    //float minDepthVS = ScreenToView(float4(0, 0, fMinDepth, 1)).z;
-    //float maxDepthVS = ScreenToView(float4(0, 0, fMaxDepth, 1)).z;
+    float minDepthVS = ScreenToView(float4(0, 0, fMinDepth, 1)).z;
+    float maxDepthVS = ScreenToView(float4(0, 0, fMaxDepth, 1)).z;
     //float nearClipVS = ScreenToView(float4(0, 0, 0, 1)).z;
 
     //// Clipping plane for minimum depth value 
     //// (used for testing lights within the bounds of opaque geometry).
     //Plane minPlane = { float3(0, 0, -1), -minDepthVS };
 
-    //Frustum frustum;
+    Frustum tileFrust;
+
+    tileFrust.planes[0].d = 0;
+    tileFrust.planes[1].d = 0;
+    tileFrust.planes[2].d = 0;
+    tileFrust.planes[3].d = 0;
 
     // Compute 4 points on the far clipping plane to use as the 
     // frustum vertices.
@@ -354,6 +359,11 @@ void CullingComputeShader(ComputeShaderInput input)
     frustum[1] = CreatePlaneEquation(p[1], p[2]);
     frustum[2] = CreatePlaneEquation(p[2], p[3]);
     frustum[3] = CreatePlaneEquation(p[3], p[0]);
+
+    tileFrust.planes[0].N = frustum[0];
+    tileFrust.planes[1].N = frustum[1];
+    tileFrust.planes[2].N = frustum[2];
+    tileFrust.planes[3].N = frustum[3];
     
     GroupMemoryBarrierWithGroupSync();
 
@@ -368,63 +378,62 @@ void CullingComputeShader(ComputeShaderInput input)
             switch (light.Type)
             {
                 case POINT_LIGHT:
-            {
+                {
                         Sphere sphere = { light.PositionVS.xyz, light.Range };
 
-                        float r = light.Range;
-                        float3 center = mul(float4(light.PositionWS), ViewMatrix).xyz;
-
-                        //if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
-                        //{
-                        //    if (!SphereInsidePlane(sphere, minPlane))
-                        //    {
-                        //// Add light to light list for opaque geometry.
-                        //        AppendLight(i);
-                        //    }
-                        //}
-
-                        bool frustum0 = GetSignedDistanceFromPlane(center, frustum[0]) < r;
-                        bool frustum1 = GetSignedDistanceFromPlane(center, frustum[1]) < r;
-                        bool frustum2 = GetSignedDistanceFromPlane(center, frustum[2]) < r;
-                        bool frustum3 = GetSignedDistanceFromPlane(center, frustum[3]) < r;
-                        //bool min = (-center.z + minDepthVS < r);
-                        //bool max = (center.z - maxDepthVS < r);
-                        
-                        if (frustum0 &&
-                            frustum1 &&
-                            frustum2 &&
-                            frustum3 )//&&
-                            //min &&
-                            //max)
+                        if (SphereInsideFrustum(sphere, tileFrust, minDepthVS, maxDepthVS))
                         {
-        
-                            // Add light to light list for opaque geometry.
-                            AppendLight(i);
-                       
+                           // Add light to light list for opaque geometry.
+                           AppendLight(i);
                         }
+                 }
+                    break;
+                case SPOT_LIGHT:
+                {
+                        float coneRadius = tan(radians(light.SpotlightAngle)) * light.Range;
+                        Cone cone = { light.PositionVS.xyz, light.Range, normalize(light.DirectionVS.xyz), coneRadius };
+                        //if (ConeInsideFrustum(cone, tileFrust, minDepthVS, maxDepthVS))
+                        //{
+                        float3 m = cross(cross(tileFrust.planes[0].N, cone.d), cone.d);
+                        float3 Q = cone.T + cone.h * cone.d - coneRadius * m;
+
+                        bool t11 = dot(tileFrust.planes[0].N, cone.T) < 0;
+                        bool t12 = dot(tileFrust.planes[0].N, Q) < 0;
+
+                        m = cross(cross(tileFrust.planes[1].N, cone.d), cone.d);
+                        Q = cone.T + cone.h * cone.d - coneRadius * m;
+
+                        bool t21 = dot(tileFrust.planes[1].N, cone.T) < 0;
+                        bool t22 = dot(tileFrust.planes[1].N, Q) < 0;
+
+                        m = cross(cross(tileFrust.planes[2].N, cone.d), cone.d);
+                        Q = cone.T + cone.h * cone.d - coneRadius * m;
+
+                        bool t31 = dot(tileFrust.planes[2].N, cone.T) < 0;
+                        bool t32 = dot(tileFrust.planes[2].N, Q) < 0;
+
+                        m = cross(cross(tileFrust.planes[3].N, cone.d), cone.d);
+                        Q = cone.T + cone.h * cone.d - coneRadius * m;
+
+                        bool t41 = dot(tileFrust.planes[3].N, cone.T) < 0;
+                        bool t42 = dot(tileFrust.planes[3].N, Q) < 0;
+
+                        if(t11 && t12 && t21 && t22 && t31 && t32 && t41 && t42)
+                        {
+                        // Add light to light list for opaque geometry.
+                            AppendLight(i);
+                        }
+                            
+ 
                     }
                     break;
-            //    case SPOT_LIGHT:
-            //{
-            //            float coneRadius = tan(radians(light.SpotlightAngle)) * light.Range;
-            //            Cone cone = { light.PositionVS.xyz, light.Range, light.DirectionVS.xyz, coneRadius };
-            //            if (ConeInsideFrustum(cone, GroupFrustum, nearClipVS, maxDepthVS))
-            //            {
-            //                if (!ConeInsidePlane(cone, minPlane))
-            //                {
-            //            // Add light to light list for opaque geometry.
-            //                    AppendLight(i);
-            //                }
-            //            }
-            //        }
-            //        break;
-            //    case DIRECTIONAL_LIGHT:
-            //{
-            //    // Directional lights always get added to our light list.
-            //    // (Hopefully there are not too many directional lights!)
-            //            AppendLight(i);
-            //        }
-            //        break;
+                case DIRECTIONAL_LIGHT:
+                    {
+                         // Directional lights always get added to our light list.
+                         // (Hopefully there are not too many directional lights!)
+                        AppendLight(i);
+                    }
+                    break;
             }
         }
     }

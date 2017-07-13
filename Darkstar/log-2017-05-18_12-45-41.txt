@@ -1,5 +1,0 @@
-FPS: 
-85
-85
-84
-Average FPS: 84
